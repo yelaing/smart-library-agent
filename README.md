@@ -46,7 +46,7 @@ flowchart LR
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/YOUR_USERNAME/smart-library-agent.git
+git clone https://github.com/yelaing/smart-library-agent.git
 cd smart-library-agent
 
 # 2. 设置 API Key
