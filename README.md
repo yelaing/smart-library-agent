@@ -104,6 +104,3 @@ src/main/java/com/library/agent/
     └── LibraryTool.java            # 4 个 @Tool，含事务控制
 ```
 
-## License
-
-MIT
