@@ -20,8 +20,9 @@ public class Book {
     @Column(nullable = false, length = 100)
     private String author;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String status;
+    private BookStatus status;
 
     @Column(length = 50)
     private String location;
@@ -45,7 +46,7 @@ public class Book {
 
     public Book() {}
 
-    public Book(String isbn, String title, String author, String status, String location) {
+    public Book(String isbn, String title, String author, BookStatus status, String location) {
         this.isbn = isbn;
         this.title = title;
         this.author = author;
@@ -61,8 +62,8 @@ public class Book {
     public void setTitle(String title) { this.title = title; }
     public String getAuthor() { return author; }
     public void setAuthor(String author) { this.author = author; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public BookStatus getStatus() { return status; }
+    public void setStatus(BookStatus status) { this.status = status; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
     public LocalDateTime getCreatedAt() { return createdAt; }

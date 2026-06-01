@@ -1,6 +1,7 @@
 package com.library.agent.tools;
 
 import com.library.agent.entity.Book;
+import com.library.agent.entity.BookStatus;
 import com.library.agent.entity.BorrowRecord;
 import com.library.agent.repository.BookRepository;
 import com.library.agent.repository.BorrowRecordRepository;
@@ -39,7 +40,7 @@ public class LibraryTool {
     @Tool(name = "query_stock", description = "通过ISBN精确查询某本书的库存状态和位置")
     public String queryStock(@ToolParam(name = "isbn", description = "图书ISBN编号") String isbn) {
         return bookRepository.findByIsbn(isbn)
-                .map(book -> String.format("《%s》- 状态：%s | 位置：%s", book.getTitle(), book.getStatus(), book.getLocation()))
+                .map(book -> String.format("《%s》- 状态：%s | 位置：%s", book.getTitle(), book.getStatus().getLabel(), book.getLocation()))
                 .orElse("未找到ISBN为 " + isbn + " 的图书");
     }
 
@@ -52,10 +53,10 @@ public class LibraryTool {
             if (book == null) {
                 return "借阅失败：未找到ISBN为 " + isbn + " 的图书";
             }
-            if ("已借出".equals(book.getStatus())) {
+            if (book.getStatus() == BookStatus.BORROWED) {
                 return "借阅失败：《" + book.getTitle() + "》已被借出，暂时无法借阅。建议搜索同类书籍。";
             }
-            book.setStatus("已借出");
+            book.setStatus(BookStatus.BORROWED);
             bookRepository.save(book);
             borrowRecordRepository.save(new BorrowRecord(book, borrower));
             return "借阅成功！《" + book.getTitle() + "》已登记到「" + borrower + "」名下，请于30天内归还。";
@@ -69,10 +70,10 @@ public class LibraryTool {
             if (book == null) {
                 return "归还失败：未找到ISBN为 " + isbn + " 的图书";
             }
-            if (!"已借出".equals(book.getStatus())) {
-                return "归还失败：《" + book.getTitle() + "》当前状态为「" + book.getStatus() + "」，无需归还。";
+            if (book.getStatus() != BookStatus.BORROWED) {
+                return "归还失败：《" + book.getTitle() + "》当前状态为「" + book.getStatus().getLabel() + "」，无需归还。";
             }
-            book.setStatus("在馆");
+            book.setStatus(BookStatus.AVAILABLE);
             bookRepository.save(book);
 
             borrowRecordRepository.findTopByBookIdAndReturnDateIsNullOrderByBorrowDateDesc(book.getId())
@@ -87,6 +88,6 @@ public class LibraryTool {
 
     private String formatBook(Book book) {
         return String.format("[%s] 《%s》- %s | 状态：%s | 位置：%s",
-                book.getIsbn(), book.getTitle(), book.getAuthor(), book.getStatus(), book.getLocation());
+                book.getIsbn(), book.getTitle(), book.getAuthor(), book.getStatus().getLabel(), book.getLocation());
     }
 }

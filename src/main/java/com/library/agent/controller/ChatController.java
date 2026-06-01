@@ -1,38 +1,65 @@
 package com.library.agent.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.library.agent.dto.ChatRequest;
 import com.library.agent.dto.ChatResponse;
 import io.agentscope.core.ReActAgent;
+import io.agentscope.core.chat.completions.streaming.ChatCompletionsStreamingAdapter;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.message.TextBlock;
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
-/**
- * OpenAI 兼容的 Chat Completions 接口。
- * POST /v1/chat/completions
- */
 @RestController
 public class ChatController {
 
     private final ReActAgent agent;
+    private final ChatCompletionsStreamingAdapter streamingAdapter;
+    private final ObjectMapper objectMapper;
 
     public ChatController(ReActAgent agent) {
         this.agent = agent;
+        this.streamingAdapter = new ChatCompletionsStreamingAdapter();
+        this.objectMapper = new ObjectMapper();
     }
 
     @PostMapping("/v1/chat/completions")
-    public ChatResponse chat(@RequestBody ChatRequest request) {
-        String userContent = extractLastUserMessage(request.messages());
+    public ResponseEntity<?> chat(@RequestBody ChatRequest request) {
+        String userContent = extractLastUserMessage(request.getMessages());
         Msg userMsg = Msg.builder()
                 .role(MsgRole.USER)
                 .content(TextBlock.builder().text(userContent).build())
                 .build();
+
+        String model = request.getModel() != null ? request.getModel() : "qwen-plus";
+
+        if (request.isStream()) {
+            String requestId = java.util.UUID.randomUUID().toString();
+            Flux<String> sseFlux = streamingAdapter
+                    .stream(agent, List.of(userMsg), requestId, model)
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .map(chunk -> {
+                        try {
+                            String json = objectMapper.writeValueAsString(chunk);
+                            return json + "\n\n";
+                        } catch (Exception e) {
+                            return "";
+                        }
+                    })
+                    .concatWith(Flux.just("[DONE]\n\n"));
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_EVENT_STREAM)
+                    .body(sseFlux);
+        }
 
         Msg response = agent.call(userMsg)
                 .subscribeOn(Schedulers.boundedElastic())
@@ -57,12 +84,12 @@ public class ChatController {
 
         ChatResponse resp = new ChatResponse();
         resp.setChoices(List.of(choice));
-        resp.setModel(request.model() != null ? request.model() : "qwen-plus");
+        resp.setModel(model);
         resp.setObject("chat.completion");
         resp.setId(java.util.UUID.randomUUID().toString());
         resp.setCreated(System.currentTimeMillis() / 1000);
 
-        return resp;
+        return ResponseEntity.ok(resp);
     }
 
     @PostMapping("/api/health")
@@ -75,10 +102,10 @@ public class ChatController {
             return "";
         }
         for (int i = messages.size() - 1; i >= 0; i--) {
-            if ("user".equals(messages.get(i).role())) {
-                return messages.get(i).content();
+            if ("user".equals(messages.get(i).getRole())) {
+                return messages.get(i).getContent();
             }
         }
-        return messages.get(messages.size() - 1).content();
+        return messages.get(messages.size() - 1).getContent();
     }
 }

@@ -21,6 +21,15 @@ data/
 .DS_Store
 Thumbs.db
 
+# MCP Temp
+.playwright-mcp/
+
+# Build Artifacts
+META-INF/
+
+# Environment
+.env
+
 # Java
 *.class
 *.jar

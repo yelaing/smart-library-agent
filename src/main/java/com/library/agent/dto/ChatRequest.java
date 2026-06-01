@@ -7,9 +7,9 @@ public class ChatRequest {
     private boolean stream;
     private List<Message> messages;
 
-    public String model() { return model; }
-    public boolean stream() { return stream; }
-    public List<Message> messages() { return messages; }
+    public String getModel() { return model; }
+    public boolean isStream() { return stream; }
+    public List<Message> getMessages() { return messages; }
 
     public void setModel(String model) { this.model = model; }
     public void setStream(boolean stream) { this.stream = stream; }
@@ -19,8 +19,8 @@ public class ChatRequest {
         private String role;
         private String content;
 
-        public String role() { return role; }
-        public String content() { return content; }
+        public String getRole() { return role; }
+        public String getContent() { return content; }
         public void setRole(String role) { this.role = role; }
         public void setContent(String content) { this.content = content; }
     }

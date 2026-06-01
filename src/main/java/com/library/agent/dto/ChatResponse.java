@@ -1,5 +1,6 @@
 package com.library.agent.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public class ChatResponse {
@@ -22,6 +23,7 @@ public class ChatResponse {
 
     public static class Choice {
         private int index;
+        @JsonProperty("finish_reason")
         private String finishReason;
         private Message message;
 
