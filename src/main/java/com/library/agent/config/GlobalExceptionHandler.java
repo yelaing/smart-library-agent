@@ -1,5 +1,6 @@
 package com.library.agent.config;
 
+import com.library.agent.exception.BookNotFoundException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -19,6 +20,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException e) {
         log.warn("请求参数错误: {}", e.getMessage());
         return buildError(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(BookNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(BookNotFoundException e) {
+        log.warn("图书未找到: ISBN={}", e.getIsbn());
+        return buildError(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
