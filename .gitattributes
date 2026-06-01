@@ -1,0 +1,6 @@
+* text=auto
+*.java text diff=java
+*.xml text
+*.yml text
+*.md text
+*.properties text
