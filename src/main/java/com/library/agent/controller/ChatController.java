@@ -10,6 +10,8 @@ import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.message.TextBlock;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +22,8 @@ import reactor.core.scheduler.Schedulers;
 
 @RestController
 public class ChatController {
+
+    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
 
     private final ReActAgent agent;
     private final ChatCompletionsStreamingAdapter streamingAdapter;
@@ -54,11 +58,15 @@ public class ChatController {
                     .subscribeOn(Schedulers.boundedElastic())
                     .map(chunk -> {
                         try {
-                            String json = objectMapper.writeValueAsString(chunk);
-                            return json + "\n\n";
+                            return objectMapper.writeValueAsString(chunk) + "\n\n";
                         } catch (Exception e) {
-                            return "";
+                            log.warn("SSE 序列化失败: {}", e.getMessage());
+                            return "{\"error\":\"serialization failed\"}\n\n";
                         }
+                    })
+                    .onErrorResume(e -> {
+                        log.error("Agent 流式调用失败", e);
+                        return Flux.just("{\"error\":\"" + e.getMessage() + "\"}\n\n", "[DONE]\n\n");
                     })
                     .concatWith(Flux.just("[DONE]\n\n"));
 
