@@ -75,9 +75,7 @@ public class ChatController {
                     .body(sseFlux);
         }
 
-        Msg response = agent.call(userMsg)
-                .subscribeOn(Schedulers.boundedElastic())
-                .block();
+        Msg response = agent.call(userMsg).block();
 
         String replyText = "";
         if (response != null) {

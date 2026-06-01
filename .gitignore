@@ -30,6 +30,9 @@ META-INF/
 # Environment
 .env
 
+# Temp files
+image.png
+
 # Java
 *.class
 *.jar
