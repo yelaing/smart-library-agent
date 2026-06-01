@@ -30,6 +30,9 @@ META-INF/
 # Environment
 .env
 
+# Logs
+logs/
+
 # Temp files
 image.png
 
