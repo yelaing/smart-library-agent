@@ -4,13 +4,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("ChatResponse 序列化测试")
 class ChatResponseTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
+    @DisplayName("finish_reason 字段使用 snake_case 序列化")
     void shouldSerializeFinishReasonAsSnakeCase() throws Exception {
         ChatResponse.Message msg = new ChatResponse.Message();
         msg.setRole("assistant");
@@ -38,6 +41,7 @@ class ChatResponseTest {
     }
 
     @Test
+    @DisplayName("空 choices 数组正常序列化")
     void shouldHandleEmptyChoices() throws Exception {
         ChatResponse resp = new ChatResponse();
         resp.setId("empty");

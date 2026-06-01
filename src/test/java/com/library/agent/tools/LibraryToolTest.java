@@ -13,6 +13,7 @@ import com.library.agent.repository.BorrowRecordRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -22,6 +23,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("图书工具测试")
 class LibraryToolTest {
 
     @Mock
@@ -43,6 +45,7 @@ class LibraryToolTest {
     }
 
     @Test
+    @DisplayName("搜索图书 - 关键词匹配时返回结果")
     void searchBook_shouldReturnResults_whenKeywordMatches() {
         when(bookRepository.findByTitleContaining("Spring")).thenReturn(List.of(
                 new Book("9787111636996", "Spring实战", "Craig Walls", BookStatus.AVAILABLE, "A区-3排-12号")
@@ -55,6 +58,7 @@ class LibraryToolTest {
     }
 
     @Test
+    @DisplayName("搜索图书 - 无匹配时返回提示")
     void searchBook_shouldReturnEmptyMessage_whenNoMatch() {
         when(bookRepository.findByTitleContaining("不存在")).thenReturn(List.of());
 
@@ -64,6 +68,7 @@ class LibraryToolTest {
     }
 
     @Test
+    @DisplayName("查询库存 - ISBN 存在时返回图书信息")
     void queryStock_shouldReturnBookInfo_whenIsbnExists() {
         when(bookRepository.findByIsbn("9787111636996")).thenReturn(Optional.of(
                 new Book("9787111636996", "Spring实战", "Craig Walls", BookStatus.AVAILABLE, "A区-3排-12号")
@@ -76,6 +81,7 @@ class LibraryToolTest {
     }
 
     @Test
+    @DisplayName("查询库存 - ISBN 不存在时返回未找到")
     void queryStock_shouldReturnNotFound_whenIsbnNotExists() {
         when(bookRepository.findByIsbn("000")).thenReturn(Optional.empty());
 
@@ -85,6 +91,7 @@ class LibraryToolTest {
     }
 
     @Test
+    @DisplayName("借书 - 图书在馆时借阅成功")
     void borrowBook_shouldSucceed_whenBookAvailable() {
         Book book = new Book("9787111636996", "Spring实战", "Craig Walls", BookStatus.AVAILABLE, "A区-3排-12号");
         when(bookRepository.findByIsbn("9787111636996")).thenReturn(Optional.of(book));
@@ -98,6 +105,7 @@ class LibraryToolTest {
     }
 
     @Test
+    @DisplayName("借书 - 图书不存在时借阅失败")
     void borrowBook_shouldFail_whenBookNotFound() {
         when(bookRepository.findByIsbn("000")).thenReturn(Optional.empty());
 
@@ -108,6 +116,7 @@ class LibraryToolTest {
     }
 
     @Test
+    @DisplayName("借书 - 图书已借出时借阅失败")
     void borrowBook_shouldFail_whenAlreadyBorrowed() {
         Book book = new Book("9787111636996", "Spring实战", "Craig Walls", BookStatus.BORROWED, "A区-3排-12号");
         when(bookRepository.findByIsbn("9787111636996")).thenReturn(Optional.of(book));
@@ -119,6 +128,7 @@ class LibraryToolTest {
     }
 
     @Test
+    @DisplayName("还书 - 已借出图书归还成功")
     void returnBook_shouldSucceed_whenBookIsBorrowed() {
         Book book = new Book("9787111636996", "Spring实战", "Craig Walls", BookStatus.BORROWED, "A区-3排-12号");
         book.setId(1L);
@@ -135,6 +145,7 @@ class LibraryToolTest {
     }
 
     @Test
+    @DisplayName("还书 - 图书不存在时归还失败")
     void returnBook_shouldFail_whenBookNotFound() {
         when(bookRepository.findByIsbn("000")).thenReturn(Optional.empty());
 
@@ -145,6 +156,7 @@ class LibraryToolTest {
     }
 
     @Test
+    @DisplayName("还书 - 图书未借出时归还失败")
     void returnBook_shouldFail_whenBookNotBorrowed() {
         Book book = new Book("9787111636996", "Spring实战", "Craig Walls", BookStatus.AVAILABLE, "A区-3排-12号");
         when(bookRepository.findByIsbn("9787111636996")).thenReturn(Optional.of(book));
