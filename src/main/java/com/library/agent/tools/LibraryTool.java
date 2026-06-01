@@ -7,9 +7,13 @@ import com.library.agent.repository.BookRepository;
 import com.library.agent.repository.BorrowRecordRepository;
 import io.agentscope.core.tool.Tool;
 import io.agentscope.core.tool.ToolParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionTemplate;
 
 public class LibraryTool {
+
+    private static final Logger log = LoggerFactory.getLogger(LibraryTool.class);
 
     private final BookRepository bookRepository;
     private final BorrowRecordRepository borrowRecordRepository;
@@ -59,6 +63,7 @@ public class LibraryTool {
             book.setStatus(BookStatus.BORROWED);
             bookRepository.save(book);
             borrowRecordRepository.save(new BorrowRecord(book, borrower));
+            log.info("借阅: {} → ISBN={} 《{}》", borrower, isbn, book.getTitle());
             return "借阅成功！《" + book.getTitle() + "》已登记到「" + borrower + "」名下，请于30天内归还。";
         });
     }
@@ -82,6 +87,7 @@ public class LibraryTool {
                         borrowRecordRepository.save(record);
                     });
 
+            log.info("归还: ISBN={} 《{}》", isbn, book.getTitle());
             return "归还成功！《" + book.getTitle() + "》已归还入库。";
         });
     }
