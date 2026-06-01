@@ -33,7 +33,13 @@ public class ChatController {
 
     @PostMapping("/v1/chat/completions")
     public ResponseEntity<?> chat(@RequestBody ChatRequest request) {
+        if (request.getMessages() == null || request.getMessages().isEmpty()) {
+            throw new IllegalArgumentException("messages 不能为空");
+        }
         String userContent = extractLastUserMessage(request.getMessages());
+        if (userContent.isBlank()) {
+            throw new IllegalArgumentException("消息内容不能为空");
+        }
         Msg userMsg = Msg.builder()
                 .role(MsgRole.USER)
                 .content(TextBlock.builder().text(userContent).build())
