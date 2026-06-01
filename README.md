@@ -150,6 +150,3 @@ src/test/java/com/library/agent/
     └── LibraryToolTest.java            # 工具单元测试
 ```
 
-## License
-
-MIT
