@@ -88,4 +88,28 @@ class ChatControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.model").value("qwen-plus"));
     }
+
+    @Test
+    void chat_shouldReturn400_whenMessagesEmpty() throws Exception {
+        String requestBody = """
+                {"model":"qwen-plus","messages":[]}""";
+
+        mockMvc.perform(post("/v1/chat/completions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("messages 不能为空"));
+    }
+
+    @Test
+    void chat_shouldReturn400_whenContentBlank() throws Exception {
+        String requestBody = """
+                {"model":"qwen-plus","messages":[{"role":"user","content":"   "}]}""";
+
+        mockMvc.perform(post("/v1/chat/completions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("消息内容不能为空"));
+    }
 }
