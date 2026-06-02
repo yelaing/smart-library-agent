@@ -27,6 +27,9 @@ public class Book {
     @Column(length = 50)
     private String location;
 
+    @Column(length = 1000)
+    private String description;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -54,6 +57,15 @@ public class Book {
         this.location = location;
     }
 
+    public Book(String isbn, String title, String author, BookStatus status, String location, String description) {
+        this.isbn = isbn;
+        this.title = title;
+        this.author = author;
+        this.status = status;
+        this.location = location;
+        this.description = description;
+    }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getIsbn() { return isbn; }
@@ -66,6 +78,8 @@ public class Book {
     public void setStatus(BookStatus status) { this.status = status; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }
