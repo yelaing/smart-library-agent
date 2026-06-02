@@ -9,7 +9,8 @@
 
 ## 核心亮点
 
-- **ReAct 推理 + 动态 Tool Calling** — Agent 自主判断用户意图，在 `search_book` / `query_stock` / `borrow_book` / `return_book` 四个工具间自动调度
+- **RAG 语义推荐** — 基于 DashScope text-embedding-v2 将图书简介向量化，用户说"想学并发编程"时，Agent 通过余弦相似度检索最匹配的馆藏图书，而非简单的关键词匹配
+- **ReAct 推理 + 5 Tool Calling** — Agent 自主判断用户意图，在 `recommend_book` / `search_book` / `query_stock` / `borrow_book` / `return_book` 五个工具间自动调度
 - **JPA 事务一致性** — 借书（改状态 + 建记录）和还书（改状态 + 补归还时间）均在 `TransactionTemplate` 中原子执行，杜绝 AI 自动操作中的数据不一致
 - **零配置持久化** — H2 文件数据库，重启不丢数据，无需安装外部数据库
 - **OpenAI 兼容 API** — `POST /v1/chat/completions`，可直接接入任何兼容 OpenAI 协议的前端或工具链
@@ -21,9 +22,12 @@ flowchart LR
     User["👤 用户"] -->|POST /v1/chat/completions| API["ChatController<br/>OpenAI 兼容接口"]
     API --> Agent["ReActAgent<br/>推理 + 工具调度"]
     Agent --> LLM["DashScope<br/>qwen-plus"]
-    Agent --> Toolkit["Toolkit<br/>4 个图书工具"]
+    Agent --> Toolkit["Toolkit<br/>5 个图书工具"]
+    Toolkit -->|recommend_book| Emb["EmbeddingService<br/>text-embedding-v2"]
+    Emb --> Vec["VectorStore<br/>余弦相似度检索"]
     Toolkit -->|search_book| Repo["BookRepository"]
     Toolkit -->|query_stock| Repo
+    Vec --> Repo
     Toolkit -->|borrow_book| Tx["TransactionTemplate<br/>原子操作"]
     Toolkit -->|return_book| Tx
     Tx --> DB["H2 File DB<br/>books + borrow_records"]
@@ -109,6 +113,7 @@ mvn test
 
 | 工具 | 说明 | 示例 |
 |------|------|------|
+| `recommend_book` | 语义检索智能推荐（RAG） | "想学并发编程的书" |
 | `search_book` | 按书名关键词模糊搜索 | "搜索Spring相关的书" |
 | `query_stock` | 按 ISBN 精确查库存 | "查ISBN 9787111636996" |
 | `borrow_book` | 借阅图书（含事务） | "借阅ISBN xxx，借阅人张三" |
@@ -139,8 +144,12 @@ src/main/java/com/library/agent/
 ├── repository/
 │   ├── BookRepository.java         # 图书 JPA 仓库
 │   └── BorrowRecordRepository.java # 借阅记录 JPA 仓库
+├── service/
+│   ├── EmbeddingService.java       # DashScope 文本向量化
+│   ├── VectorStore.java            # 内存向量索引 + 余弦相似度
+│   └── VectorInitService.java      # 启动时构建向量索引
 └── tools/
-    └── LibraryTool.java            # 4 个 @Tool，含事务控制
+    └── LibraryTool.java            # 5 个 @Tool，含 RAG 推荐和事务控制
 
 src/test/java/com/library/agent/
 ├── LibraryAgentApplicationTests.java   # 端到端测试
