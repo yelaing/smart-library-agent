@@ -17,6 +17,9 @@ spring:
     show-sql: false
     open-in-view: false
 
+siliconflow:
+  api-key: ${SILICONFLOW_API_KEY:}
+
 agentscope:
   dashscope:
     api-key: ${DASHSCOPE_API_KEY:YOUR_DASHSCOPE_API_KEY_HERE}

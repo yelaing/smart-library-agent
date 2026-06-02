@@ -15,15 +15,30 @@ import org.springframework.web.client.RestTemplate;
 public class EmbeddingService {
 
     private static final Logger log = LoggerFactory.getLogger(EmbeddingService.class);
-    private static final String EMBEDDING_URL =
-            "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings";
 
+    private static final String SILICONFLOW_URL = "https://api.siliconflow.cn/v1/embeddings";
+    private static final String DASHSCOPE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings";
+
+    private final String endpoint;
+    private final String model;
     private final String apiKey;
     private final RestTemplate restTemplate;
 
-    public EmbeddingService(@Value("${agentscope.dashscope.api-key}") String apiKey) {
-        this.apiKey = apiKey;
+    public EmbeddingService(
+            @Value("${siliconflow.api-key:#{null}}") String siliconflowKey,
+            @Value("${agentscope.dashscope.api-key}") String dashscopeKey) {
         this.restTemplate = new RestTemplate();
+        if (siliconflowKey != null && !siliconflowKey.isBlank()) {
+            this.apiKey = siliconflowKey;
+            this.endpoint = SILICONFLOW_URL;
+            this.model = "BAAI/bge-large-zh-v1.5";
+            log.info("使用硅基流动 Embedding 服务");
+        } else {
+            this.apiKey = dashscopeKey;
+            this.endpoint = DASHSCOPE_URL;
+            this.model = "text-embedding-v4";
+            log.info("使用百炼 DashScope Embedding 服务");
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -33,13 +48,12 @@ public class EmbeddingService {
         headers.setBearerAuth(apiKey);
 
         Map<String, Object> body = Map.of(
-                "model", "text-embedding-v4",
-                "input", text,
-                "dimensions", 1024
+                "model", model,
+                "input", text
         );
 
         try {
-            var response = restTemplate.postForObject(EMBEDDING_URL, new HttpEntity<>(body, headers), Map.class);
+            var response = restTemplate.postForObject(endpoint, new HttpEntity<>(body, headers), Map.class);
             if (response == null) {
                 throw new RuntimeException("Embedding API 返回为空");
             }

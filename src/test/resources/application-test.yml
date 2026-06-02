@@ -6,6 +6,9 @@ spring:
     hibernate:
       ddl-auto: create-drop
 
+siliconflow:
+  api-key: ""
+
 agentscope:
   dashscope:
     api-key: test-key
