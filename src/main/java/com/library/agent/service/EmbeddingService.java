@@ -16,7 +16,7 @@ public class EmbeddingService {
 
     private static final Logger log = LoggerFactory.getLogger(EmbeddingService.class);
     private static final String EMBEDDING_URL =
-            "https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding";
+            "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings";
 
     private final String apiKey;
     private final RestTemplate restTemplate;
@@ -33,9 +33,9 @@ public class EmbeddingService {
         headers.setBearerAuth(apiKey);
 
         Map<String, Object> body = Map.of(
-                "model", "text-embedding-v2",
-                "input", Map.of("texts", List.of(text)),
-                "parameters", Map.of("text_type", "document")
+                "model", "text-embedding-v4",
+                "input", text,
+                "dimensions", 1024
         );
 
         try {
@@ -43,9 +43,8 @@ public class EmbeddingService {
             if (response == null) {
                 throw new RuntimeException("Embedding API 返回为空");
             }
-            Map<String, Object> output = (Map<String, Object>) response.get("output");
-            List<Map<String, Object>> embeddings = (List<Map<String, Object>>) output.get("embeddings");
-            List<Double> raw = (List<Double>) embeddings.get(0).get("embedding");
+            List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
+            List<Double> raw = (List<Double>) data.get(0).get("embedding");
             return raw.stream().mapToDouble(Double::doubleValue).toArray();
         } catch (Exception e) {
             log.error("文本向量化失败: {}", e.getMessage());
