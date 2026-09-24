@@ -28,7 +28,7 @@ jobs:
 
       - name: Upload JaCoCo coverage report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: jacoco-report
           path: target/site/jacoco/
@@ -36,7 +36,7 @@ jobs:
 
       - name: Upload checkstyle report
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: checkstyle-report
           path: target/checkstyle-result.xml
@@ -50,11 +50,11 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Set up Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # 只验证 Dockerfile 能构建成功，不推送镜像
       - name: Build image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: false
