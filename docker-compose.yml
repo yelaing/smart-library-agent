@@ -1,15 +1,28 @@
 services:
   app:
     build: .
+    image: smart-library-agent:latest
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      # 用 prod profile 走 MySQL —— 这样下面的 mysql 服务才真正被用到。
+      # 原先这里写的是 dev（对应 H2 文件库），却又声明 depends_on: mysql，语义是矛盾的。
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: library
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_PASSWORD:-root}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+      # 用 :- 而非 :? ：没有 API Key 时服务仍应能起来（查书/借书/还书可用，
+      # 仅语义推荐与 Agent 对话不可用），否则会破坏「一键启动」
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      SILICONFLOW_API_KEY: ${SILICONFLOW_API_KEY:-}
     depends_on:
       mysql:
         condition: service_healthy
     restart: unless-stopped
+    # 健康检查由镜像内的 HEALTHCHECK 提供（见 Dockerfile），此处不重复定义
 
   mysql:
     image: mysql:8.0
@@ -18,13 +31,20 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-root}
       MYSQL_DATABASE: library
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      # 用 $$ 让 compose 输出字面 $，交由容器内的 shell 读取 MYSQL_ROOT_PASSWORD，
+      # 避免把密码硬编码进 compose 文件
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
 
 volumes:
   mysql_data:
