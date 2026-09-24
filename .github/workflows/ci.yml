@@ -61,3 +61,54 @@ jobs:
           tags: smart-library-agent:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  compose-smoke:
+    name: docker-compose 一键启动验证
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      # 用假 key：本 job 只验证 app + MySQL 能起来、连得上、端点可用，
+      # 不调用真实 LLM。真实 key 缺失时 compose 会按 :? 直接拒绝启动，
+      # 所以这里必须提供一个非空值。
+      DASHSCOPE_API_KEY: smoke-test-key
+      MYSQL_PASSWORD: root
+    steps:
+      - uses: actions/checkout@v4
+
+      # 验证 prod profile + MySQL 连接 + 健康检查依赖顺序是否真的能一键拉起
+      - name: docker compose up
+        run: docker compose up -d --build
+
+      - name: 等待服务健康
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/actuator/health > /dev/null 2>&1; then
+              echo "服务已就绪（第 $((i * 5)) 秒）"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::服务未在 300 秒内进入健康状态"
+          docker compose ps
+          docker compose logs
+          exit 1
+
+      - name: 断言关键端点
+        run: |
+          set -e
+          health=$(curl -fsS http://localhost:8080/actuator/health)
+          echo "$health"
+          echo "$health" | grep -q '"status":"UP"'
+          echo "$health" | grep -q '"db"'
+          echo "$health" | grep -q '"vectorStore"'
+          test "$(curl -fsS -o /dev/null -w '%{http_code}' http://localhost:8080/v3/api-docs)" = "200"
+          test "$(curl -fsS -o /dev/null -w '%{http_code}' -L http://localhost:8080/swagger-ui.html)" = "200"
+          test "$(curl -fsS -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/api/health)" = "200"
+
+      - name: 失败时输出日志
+        if: failure()
+        run: docker compose logs
+
+      - name: 清理
+        if: always()
+        run: docker compose down -v
