@@ -1,13 +1,23 @@
+# 测试：H2 内存库 + 关闭一切外部依赖，保证测试可离线运行
 spring:
   datasource:
     url: jdbc:h2:mem:test;MODE=MySQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
+    username: sa
+    password:
   jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
 
+# 显式置空，避免本机存在 SILICONFLOW_API_KEY 环境变量时测试打到真实接口
 siliconflow:
   api-key: ""
+
+library:
+  vector-init:
+    # 不在启动时调用 Embedding 接口，测试全程离线
+    enabled: false
 
 agentscope:
   dashscope:
