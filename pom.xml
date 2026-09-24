@@ -129,6 +129,15 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>
         </dependency>
+        <!-- Spring Boot 4 把 H2 控制台的自动配置拆成了独立模块；不加它，
+             application-dev.yml 里的 spring.h2.console.* 就是一段静默失效的死配置
+             （访问 /h2-console 抛 NoResourceFoundException）。
+             runtime scope：生产 profile 下 spring.h2.console.enabled=false，不会注册该 servlet -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-h2console</artifactId>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -125,6 +125,40 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.agent").value("图书馆助手"));
     }
 
+    /**
+     * 以下三条守卫一组真实存在过的缺陷：{@code @ExceptionHandler(Exception.class)}
+     * 会把 Spring MVC 本应直接返回的 404/405/400 全部吞成 500，
+     * 导致客户端无法区分"自己请求写错了"和"服务端故障"。
+     */
+    @Test
+    @DisplayName("不存在的路径返回 404 与错误码 40401，而不是 500")
+    void unknownPath_shouldReturn404() throws Exception {
+        mockMvc.perform(get("/no/such/path"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(40401))
+                .andExpect(jsonPath("$.path").value("/no/such/path"))
+                .andExpect(jsonPath("$.traceId").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("用 GET 调用只接受 POST 的接口返回 405 与错误码 40501")
+    void wrongHttpMethod_shouldReturn405() throws Exception {
+        mockMvc.perform(get("/v1/chat/completions"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.code").value(40501));
+    }
+
+    @Test
+    @DisplayName("请求体不是合法 JSON 时返回 400 与错误码 40001")
+    void malformedJsonBody_shouldReturn400() throws Exception {
+        mockMvc.perform(post("/v1/chat/completions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{not a json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(40001))
+                .andExpect(jsonPath("$.message").value("请求体不是合法的 JSON"));
+    }
+
     private Msg reply(String text) {
         return Msg.builder()
                 .role(MsgRole.ASSISTANT)
