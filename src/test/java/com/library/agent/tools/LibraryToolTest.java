@@ -10,8 +10,7 @@ import com.library.agent.entity.BookStatus;
 import com.library.agent.entity.BorrowRecord;
 import com.library.agent.repository.BookRepository;
 import com.library.agent.repository.BorrowRecordRepository;
-import com.library.agent.service.EmbeddingService;
-import com.library.agent.service.VectorStore;
+import com.library.agent.service.RecommendationService;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,9 +34,7 @@ class LibraryToolTest {
     @Mock
     private TransactionTemplate transactionTemplate;
     @Mock
-    private EmbeddingService embeddingService;
-    @Mock
-    private VectorStore vectorStore;
+    private RecommendationService recommendationService;
 
     private LibraryTool libraryTool;
 
@@ -48,7 +45,7 @@ class LibraryToolTest {
             return callback.doInTransaction(mock(TransactionStatus.class));
         });
         libraryTool = new LibraryTool(bookRepository, borrowRecordRepository, transactionTemplate,
-                embeddingService, vectorStore);
+                recommendationService);
     }
 
     @Test
@@ -176,14 +173,12 @@ class LibraryToolTest {
 
     @Test
     @DisplayName("语义推荐 - 根据用户需求检索匹配图书")
-    void recommendBook_shouldReturnResults_whenVectorStoreHasMatch() {
+    void recommendBook_shouldReturnResults_whenServiceHasMatch() {
         Book book = new Book("9787111636996", "Spring实战", "Craig Walls",
                 BookStatus.AVAILABLE, "A区-3排-12号", "一本Spring框架实战书");
         book.setId(1L);
-        when(vectorStore.size()).thenReturn(1);
-        when(embeddingService.embed("想学Java框架")).thenReturn(new double[]{0.1, 0.2});
-        when(vectorStore.search(any(double[].class), eq(3))).thenReturn(List.of(1L));
-        when(bookRepository.findById(1L)).thenReturn(Optional.of(book));
+        when(recommendationService.isReady()).thenReturn(true);
+        when(recommendationService.search("想学Java框架")).thenReturn(List.of(book));
 
         String result = libraryTool.recommendBook("想学Java框架");
 
@@ -192,12 +187,36 @@ class LibraryToolTest {
     }
 
     @Test
-    @DisplayName("语义推荐 - 向量索引为空时返回提示")
-    void recommendBook_shouldReturnUnavailable_whenVectorStoreEmpty() {
-        when(vectorStore.size()).thenReturn(0);
+    @DisplayName("语义推荐 - 向量索引未就绪时返回不可用提示")
+    void recommendBook_shouldReturnUnavailable_whenIndexNotReady() {
+        when(recommendationService.isReady()).thenReturn(false);
 
         String result = libraryTool.recommendBook("想学Java");
 
         assertTrue(result.contains("暂不可用"));
+        verify(recommendationService, never()).search(any());
+    }
+
+    @Test
+    @DisplayName("语义推荐 - 检索到空结果时提示未找到")
+    void recommendBook_shouldReturnNotFound_whenNoMatch() {
+        when(recommendationService.isReady()).thenReturn(true);
+        when(recommendationService.search("冷门主题")).thenReturn(List.of());
+
+        String result = libraryTool.recommendBook("冷门主题");
+
+        assertTrue(result.contains("没有找到"));
+    }
+
+    @Test
+    @DisplayName("语义推荐 - 服务抛异常时兜底，不把异常抛给 LLM")
+    void recommendBook_shouldFallback_whenServiceThrows() {
+        when(recommendationService.isReady()).thenReturn(true);
+        when(recommendationService.search("想学Java")).thenThrow(new RuntimeException("文本向量化失败: 401"));
+
+        String result = libraryTool.recommendBook("想学Java");
+
+        assertTrue(result.contains("暂时不可用"));
+        assertTrue(result.contains("search_book"));
     }
 }

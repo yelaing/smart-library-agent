@@ -2,8 +2,7 @@ package com.library.agent.config;
 
 import com.library.agent.repository.BookRepository;
 import com.library.agent.repository.BorrowRecordRepository;
-import com.library.agent.service.EmbeddingService;
-import com.library.agent.service.VectorStore;
+import com.library.agent.service.RecommendationService;
 import com.library.agent.tools.LibraryTool;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.formatter.dashscope.DashScopeChatFormatter;
@@ -50,10 +49,9 @@ public class AgentConfig {
     public Toolkit toolkit(BookRepository bookRepository,
                            BorrowRecordRepository borrowRecordRepository,
                            TransactionTemplate transactionTemplate,
-                           EmbeddingService embeddingService,
-                           VectorStore vectorStore) {
+                           RecommendationService recommendationService) {
         LibraryTool libraryTool = new LibraryTool(bookRepository, borrowRecordRepository, transactionTemplate,
-                embeddingService, vectorStore);
+                recommendationService);
         Toolkit toolkit = new Toolkit();
         toolkit.registerTool(libraryTool);
         return toolkit;
