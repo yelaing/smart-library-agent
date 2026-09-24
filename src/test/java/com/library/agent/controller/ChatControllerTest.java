@@ -2,7 +2,9 @@ package com.library.agent.controller;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -19,6 +21,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @WebMvcTest(ChatController.class)
@@ -184,5 +188,24 @@ class ChatControllerTest {
                                 {"model":"qwen-plus","messages":[{"role":"user","content":"你好"}]}"""))
                 .andExpect(status().isOk())
                 .andExpect(header().string("X-Request-Id", "trace-from-client"));
+    }
+
+    @Test
+    @DisplayName("stream=true 时返回 SSE 流并以 [DONE] 结束")
+    void chat_shouldReturnSseStreamEndingWithDone() throws Exception {
+        when(agent.stream(anyList(), any())).thenReturn(Flux.empty());
+
+        MvcResult mvcResult = mockMvc.perform(post("/v1/chat/completions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.TEXT_EVENT_STREAM)
+                        .content("""
+                                {"model":"qwen-plus","stream":true,"messages":[{"role":"user","content":"你好"}]}"""))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
+                .andExpect(content().string(containsString("[DONE]")));
     }
 }

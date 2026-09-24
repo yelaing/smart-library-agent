@@ -17,6 +17,11 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- 本项目用 dependencyManagement 导入 spring-boot-dependencies，而非继承
+             spring-boot-starter-parent，因此不会自动获得 -parameters。
+             不开这个标志，@Cacheable(key = "#query") 这类按参数名解析的 SpEL
+             会在运行时抛 "Null key returned for cache operation"。 -->
+        <maven.compiler.parameters>true</maven.compiler.parameters>
         <spring-boot.version>4.0.4</spring-boot.version>
         <agentscope.version>1.0.12</agentscope.version>
         <dashscope-sdk.version>2.22.9</dashscope-sdk.version>
