@@ -76,7 +76,8 @@ docker-compose up -d
 | http://localhost:8080/actuator/health | 健康检查（含数据库与向量索引状态） |
 | http://localhost:8080/actuator/metrics | 指标（JVM、HikariCP、缓存等） |
 
-> 未填 API Key 也能启动：查书、借还书功能正常，只有对话与语义推荐不可用。
+> `DASHSCOPE_API_KEY` 是**必填**项：五个图书工具只通过 LLM tool calling 暴露，没有其它 HTTP 入口，
+> 少了它服务不提供任何功能，因此程序会在启动时直接拒绝并给出提示（而非启动后才在每次对话时 401）。
 
 ### 方式二：本地 Maven（H2 文件库，无需 MySQL）
 

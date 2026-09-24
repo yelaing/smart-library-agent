@@ -56,7 +56,9 @@ siliconflow:
 
 agentscope:
   dashscope:
-    api-key: ${DASHSCOPE_API_KEY:YOUR_DASHSCOPE_API_KEY_HERE}
+    # 不再给占位符默认值：占位符会让应用"能启动但每次都 401"，
+    # 是比启动失败更难排查的静默错误配置。缺失时由 AgentConfig 显式拒绝启动。
+    api-key: ${DASHSCOPE_API_KEY:}
     model-name: qwen-plus
 
   agent:
