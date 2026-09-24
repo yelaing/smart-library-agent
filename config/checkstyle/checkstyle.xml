@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+  务实规则集：只拦截真正影响可读性与可维护性的问题。
+  刻意不启用 JavadocMethod / JavadocType / FinalParameters / HiddenField 等
+  对现有代码风格侵入过大的检查。
+-->
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="fileExtensions" value="java"/>
+    <property name="severity" value="error"/>
+
+    <module name="NewlineAtEndOfFile"/>
+    <module name="FileTabCharacter"/>
+    <module name="LineLength">
+        <property name="max" value="150"/>
+        <property name="ignorePattern" value="^package.*|^import.*|href|https?://"/>
+    </module>
+    <module name="RegexpSingleline">
+        <property name="format" value="\s+$"/>
+        <property name="message" value="行尾存在多余空白字符"/>
+    </module>
+
+    <!-- 测试方法名沿用 method_shouldDoX_whenY 的 given-when-then 命名，
+         下划线不在 MethodName 默认格式内，故对测试源码整体放行该检查 -->
+    <module name="SuppressionSingleFilter">
+        <property name="files" value="[\\/]src[\\/]test[\\/]"/>
+        <property name="checks" value="MethodNameCheck"/>
+    </module>
+
+    <module name="TreeWalker">
+        <!-- 导入 -->
+        <module name="AvoidStarImport">
+            <!-- 测试代码中 Mockito/JUnit 的静态通配导入是常见惯例，只拦截类通配导入 -->
+            <property name="allowStaticMemberImports" value="true"/>
+        </module>
+        <module name="UnusedImports"/>
+        <module name="RedundantImport"/>
+
+        <!-- 括号与空白 -->
+        <module name="NeedBraces"/>
+        <!-- 刻意排除 METHOD_DEF：允许 `public Long getId() { return id; }` 这类紧凑访问器，
+             只约束类体与控制流的花括号风格 -->
+        <module name="LeftCurly">
+            <property name="tokens" value="CLASS_DEF,INTERFACE_DEF,ENUM_DEF,ANNOTATION_DEF,
+                CTOR_DEF,LITERAL_IF,LITERAL_ELSE,LITERAL_FOR,LITERAL_WHILE,LITERAL_DO,
+                LITERAL_TRY,LITERAL_CATCH,LITERAL_FINALLY,LITERAL_SWITCH,LITERAL_SYNCHRONIZED"/>
+        </module>
+        <module name="RightCurly"/>
+        <module name="WhitespaceAfter"/>
+        <module name="WhitespaceAround">
+            <property name="allowEmptyConstructors" value="true"/>
+            <property name="allowEmptyMethods" value="true"/>
+            <property name="allowEmptyLambdas" value="true"/>
+            <property name="allowEmptyTypes" value="true"/>
+        </module>
+        <module name="EmptyBlock"/>
+        <module name="OneStatementPerLine"/>
+
+        <!-- 命名 -->
+        <module name="PackageName"/>
+        <module name="TypeName"/>
+        <module name="MethodName"/>
+        <module name="LocalVariableName"/>
+        <module name="MemberName"/>
+        <module name="ParameterName"/>
+        <!-- 放行 SLF4J 惯例的小写 logger 字段名，其余静态常量仍要求全大写 -->
+        <module name="ConstantName">
+            <property name="format" value="^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$|^log$"/>
+        </module>
+
+        <!-- 易错写法 -->
+        <module name="ArrayTypeStyle"/>
+        <module name="UpperEll"/>
+        <module name="MissingSwitchDefault"/>
+        <module name="FallThrough"/>
+        <module name="EqualsHashCode"/>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
+        <module name="StringLiteralEquality"/>
+
+        <!-- 复杂度 -->
+        <module name="CyclomaticComplexity">
+            <property name="max" value="15"/>
+        </module>
+        <module name="MethodLength">
+            <property name="max" value="80"/>
+        </module>
+    </module>
+</module>
