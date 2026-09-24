@@ -3,12 +3,19 @@ package com.library.agent.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.library.agent.dto.ChatRequest;
 import com.library.agent.dto.ChatResponse;
+import com.library.agent.dto.ErrorResponse;
 import com.library.agent.exception.AgentTimeoutException;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.chat.completions.streaming.ChatCompletionsStreamingAdapter;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.message.TextBlock;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
+@Tag(name = "对话", description = "OpenAI 兼容的对话接口")
 @RestController
 public class ChatController {
 
@@ -42,6 +50,20 @@ public class ChatController {
         this.agentTimeout = agentTimeout;
     }
 
+    @Operation(summary = "对话补全",
+            description = """
+                    接收 OpenAI 兼容的 messages，取最后一条 role=user 的消息交给 ReAct Agent 推理，
+                    Agent 按需调用图书工具后返回回复。stream=true 时以 text/event-stream 分片返回，
+                    并以 [DONE] 结束；stream=false 时一次性返回 OpenAI 兼容结构。""")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功，返回 OpenAI 兼容结构或 SSE 流"),
+            @ApiResponse(responseCode = "400", description = "messages 为空，或最后一条用户消息内容为空白",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "504", description = "Agent 调用超过 library.chat.timeout 上限",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "服务端内部错误",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/v1/chat/completions")
     public ResponseEntity<?> chat(@RequestBody ChatRequest request) {
         if (request.getMessages() == null || request.getMessages().isEmpty()) {
@@ -122,6 +144,8 @@ public class ChatController {
         return ResponseEntity.ok(resp);
     }
 
+    @Operation(summary = "轻量健康检查",
+            description = "返回服务名与 agent 名称。含数据库、向量索引等依赖状态的完整健康信息见 GET /actuator/health")
     @PostMapping("/api/health")
     public Map<String, String> health() {
         return Map.of("status", "ok", "agent", agent.getName());

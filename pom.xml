@@ -52,6 +52,15 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-simple</artifactId>
                 </exclusion>
+                <!-- agentscope-core 经 anthropic-java 传递引入 swagger-annotations(2.2.31)，
+                     与 springdoc 需要的 swagger-annotations-jakarta(2.2.47) 包名完全相同
+                     （io.swagger.v3.oas.annotations），旧版本被优先加载会导致
+                     /v3/api-docs 抛 NoSuchMethodError: Schema.$dynamicRef()。
+                     两者包名一致、jakarta 变体版本更高且为超集，故排除旧的非 jakarta 变体。 -->
+                <exclusion>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-annotations</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
