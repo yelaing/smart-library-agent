@@ -3,15 +3,20 @@ package com.library.agent.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.library.agent.dto.ChatRequest;
 import com.library.agent.dto.ChatResponse;
+import com.library.agent.exception.AgentTimeoutException;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.chat.completions.streaming.ChatCompletionsStreamingAdapter;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.message.TextBlock;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,11 +33,13 @@ public class ChatController {
     private final ReActAgent agent;
     private final ChatCompletionsStreamingAdapter streamingAdapter;
     private final ObjectMapper objectMapper;
+    private final Duration agentTimeout;
 
-    public ChatController(ReActAgent agent) {
+    public ChatController(ReActAgent agent, @Value("${library.chat.timeout:60s}") Duration agentTimeout) {
         this.agent = agent;
         this.streamingAdapter = new ChatCompletionsStreamingAdapter();
         this.objectMapper = new ObjectMapper();
+        this.agentTimeout = agentTimeout;
     }
 
     @PostMapping("/v1/chat/completions")
@@ -50,9 +57,11 @@ public class ChatController {
                 .build();
 
         String model = request.getModel() != null ? request.getModel() : "qwen-plus";
+        // 只记录长度，不落内容，避免把读者输入写进日志
+        log.info("收到对话请求: model={}, stream={}, 输入字符数={}", model, request.isStream(), userContent.length());
 
         if (request.isStream()) {
-            String requestId = java.util.UUID.randomUUID().toString();
+            String requestId = UUID.randomUUID().toString();
             Flux<String> sseFlux = streamingAdapter
                     .stream(agent, List.of(userMsg), requestId, model)
                     .subscribeOn(Schedulers.boundedElastic())
@@ -75,7 +84,14 @@ public class ChatController {
                     .body(sseFlux);
         }
 
-        Msg response = agent.call(userMsg).block();
+        long start = System.currentTimeMillis();
+        // timeout 抛的是受检 TimeoutException，block() 会把它包成 ReactiveException，
+        // 因此在 Reactor 链路上先转成自定义异常，交给 GlobalExceptionHandler 映射为 504
+        Msg response = agent.call(userMsg)
+                .timeout(agentTimeout)
+                .onErrorMap(TimeoutException.class,
+                        e -> new AgentTimeoutException("Agent 调用超时（" + agentTimeout.toSeconds() + " 秒），请稍后重试", e))
+                .block();
 
         String replyText = "";
         if (response != null) {
@@ -84,6 +100,8 @@ public class ChatController {
                     .map(block -> ((TextBlock) block).getText())
                     .reduce("", (a, b) -> a + b);
         }
+        log.info("Agent 调用完成: model={}, 回复字符数={}, cost={}ms", model, replyText.length(),
+                System.currentTimeMillis() - start);
 
         ChatResponse.Message msg = new ChatResponse.Message();
         msg.setRole("assistant");
@@ -98,7 +116,7 @@ public class ChatController {
         resp.setChoices(List.of(choice));
         resp.setModel(model);
         resp.setObject("chat.completion");
-        resp.setId(java.util.UUID.randomUUID().toString());
+        resp.setId(UUID.randomUUID().toString());
         resp.setCreated(System.currentTimeMillis() / 1000);
 
         return ResponseEntity.ok(resp);
