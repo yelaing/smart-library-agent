@@ -158,7 +158,10 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 
 | 错误码 | HTTP | 触发场景 |
 |--------|------|----------|
-| `40001` INVALID_REQUEST | 400 | `messages` 为空，或最后一条用户消息内容为空白 |
+| `40001` INVALID_REQUEST | 400 | `messages` 为空、最后一条用户消息为空白，或请求体不是合法 JSON |
+| `40401` NOT_FOUND | 404 | 请求路径不存在 |
+| `40501` METHOD_NOT_ALLOWED | 405 | HTTP 方法不被该路径支持（如用 GET 调用只接受 POST 的接口） |
+| `41501` UNSUPPORTED_MEDIA_TYPE | 415 | 请求体 Content-Type 不被支持 |
 | `50401` AGENT_TIMEOUT | 504 | Agent 调用超过 `library.chat.timeout`（默认 60s） |
 | `50000` INTERNAL_ERROR | 500 | 未预期的服务端异常（对外只给统一话术，细节仅进日志） |
 
@@ -221,8 +224,8 @@ mvn verify    # 编译 + Checkstyle + 测试 + 覆盖率门禁 + 打包（CI 执
 
 | 项 | 现状 |
 |------|------|
-| 测试数量 | 74 |
-| 行覆盖率 | **97.2%**（310/319，排除 dto / entity / 启动类） |
+| 测试数量 | 81 |
+| 行覆盖率 | **97%**（排除 dto / entity / 启动类） |
 | 覆盖率门禁 | 行覆盖 < 80% 则构建失败（`mvn verify`） |
 | 代码风格 | Checkstyle 10.26.1，规则集见 `config/checkstyle/checkstyle.xml`，0 违规 |
 
