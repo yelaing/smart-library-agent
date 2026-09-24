@@ -1,8 +1,24 @@
 package com.library.agent.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
+/**
+ * 图书。
+ *
+ * <p>{@code isbn} 已是唯一索引，精确查询走它。
+ * {@code title} 刻意不建索引：检索用的是 {@code findByTitleContaining}，
+ * 生成 {@code LIKE '%关键词%'}，前导通配符无法命中 B-tree 索引，建了也不会被用到。</p>
+ */
 @Entity
 @Table(name = "books")
 public class Book {

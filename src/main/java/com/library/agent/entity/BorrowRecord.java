@@ -1,10 +1,30 @@
 package com.library.agent.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
+/**
+ * 借阅记录。
+ *
+ * <p>复合索引服务于还书时的查询
+ * {@code findTopByBookIdAndReturnDateIsNullOrderByBorrowDateDesc}：
+ * 该查询按 book_id 等值过滤、再按 return_date 判空，复合索引比 MySQL 为外键
+ * 自动创建的单列 book_id 索引更有选择性。</p>
+ */
 @Entity
-@Table(name = "borrow_records")
+@Table(name = "borrow_records", indexes = {
+        @Index(name = "idx_borrow_records_book_return", columnList = "book_id, return_date")
+})
 public class BorrowRecord {
 
     @Id

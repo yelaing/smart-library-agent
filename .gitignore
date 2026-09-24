@@ -41,3 +41,13 @@ image.png
 *.jar
 *.war
 *.log
+
+# 本地工具产物（含实现计划等草稿，不属于项目本身）
+.claude/
+
+# 与本 Java 项目无关的 Python 工具链残留
+.venv/
+.python-version
+main.py
+pyproject.toml
+uv.lock

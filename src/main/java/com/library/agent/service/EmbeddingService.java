@@ -26,8 +26,9 @@ public class EmbeddingService {
 
     public EmbeddingService(
             @Value("${siliconflow.api-key:#{null}}") String siliconflowKey,
-            @Value("${agentscope.dashscope.api-key}") String dashscopeKey) {
-        this.restTemplate = new RestTemplate();
+            @Value("${agentscope.dashscope.api-key}") String dashscopeKey,
+            RestTemplate embeddingRestTemplate) {
+        this.restTemplate = embeddingRestTemplate;
         if (siliconflowKey != null && !siliconflowKey.isBlank()) {
             this.apiKey = siliconflowKey;
             this.endpoint = SILICONFLOW_URL;
@@ -52,6 +53,7 @@ public class EmbeddingService {
                 "input", text
         );
 
+        long start = System.currentTimeMillis();
         try {
             var response = restTemplate.postForObject(endpoint, new HttpEntity<>(body, headers), Map.class);
             if (response == null) {
@@ -59,9 +61,13 @@ public class EmbeddingService {
             }
             List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
             List<Double> raw = (List<Double>) data.get(0).get("embedding");
-            return raw.stream().mapToDouble(Double::doubleValue).toArray();
+            double[] vector = raw.stream().mapToDouble(Double::doubleValue).toArray();
+            log.debug("文本向量化完成: model={}, 维度={}, cost={}ms", model, vector.length,
+                    System.currentTimeMillis() - start);
+            return vector;
         } catch (Exception e) {
-            log.error("文本向量化失败: {}", e.getMessage());
+            log.error("文本向量化失败: endpoint={}, cost={}ms, reason={}", endpoint,
+                    System.currentTimeMillis() - start, e.getMessage());
             throw new RuntimeException("文本向量化失败: " + e.getMessage(), e);
         }
     }

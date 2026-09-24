@@ -1,0 +1,42 @@
+# 构建产物
+target/
+
+# 版本控制与 CI
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# 本地运行产物（数据库文件与日志不应进镜像）
+data/
+logs/
+*.log
+*.mv.db
+*.trace.db
+
+# 容器层已在 Dockerfile 内单独拷贝，其余不必要文件排除以缩小构建上下文
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# 与本 Java 项目无关的 Python 环境与脚本
+.venv/
+main.py
+pyproject.toml
+uv.lock
+.python-version
+
+# 其他本地文件
+.playwright-mcp/
+.claude/
+META-INF/
+image.png
+start.bat
+*.md

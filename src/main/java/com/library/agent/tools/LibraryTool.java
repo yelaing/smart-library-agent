@@ -5,14 +5,17 @@ import com.library.agent.entity.BookStatus;
 import com.library.agent.entity.BorrowRecord;
 import com.library.agent.repository.BookRepository;
 import com.library.agent.repository.BorrowRecordRepository;
-import com.library.agent.service.EmbeddingService;
-import com.library.agent.service.VectorStore;
+import com.library.agent.service.RecommendationService;
 import io.agentscope.core.tool.Tool;
 import io.agentscope.core.tool.ToolParam;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionTemplate;
 
+/**
+ * Agent 工具集：只做 LLM 参数适配与结果格式化，业务逻辑下沉到 Service。
+ */
 public class LibraryTool {
 
     private static final Logger log = LoggerFactory.getLogger(LibraryTool.class);
@@ -20,25 +23,23 @@ public class LibraryTool {
     private final BookRepository bookRepository;
     private final BorrowRecordRepository borrowRecordRepository;
     private final TransactionTemplate transactionTemplate;
-    private final EmbeddingService embeddingService;
-    private final VectorStore vectorStore;
+    private final RecommendationService recommendationService;
 
     public LibraryTool(BookRepository bookRepository,
                        BorrowRecordRepository borrowRecordRepository,
                        TransactionTemplate transactionTemplate,
-                       EmbeddingService embeddingService,
-                       VectorStore vectorStore) {
+                       RecommendationService recommendationService) {
         this.bookRepository = bookRepository;
         this.borrowRecordRepository = borrowRecordRepository;
         this.transactionTemplate = transactionTemplate;
-        this.embeddingService = embeddingService;
-        this.vectorStore = vectorStore;
+        this.recommendationService = recommendationService;
     }
 
     @Tool(name = "search_book", description = "按书名关键词搜索图书，返回匹配的图书列表及其库存状态")
     public String searchBook(
             @ToolParam(name = "keyword", description = "书名关键词，支持模糊匹配") String keyword) {
         var books = bookRepository.findByTitleContaining(keyword);
+        log.info("工具执行 search_book: keyword={}, hits={}", keyword, books.size());
         if (books.isEmpty()) {
             return "未找到包含「" + keyword + "」的图书";
         }
@@ -51,6 +52,7 @@ public class LibraryTool {
 
     @Tool(name = "query_stock", description = "通过ISBN精确查询某本书的库存状态和位置")
     public String queryStock(@ToolParam(name = "isbn", description = "图书ISBN编号") String isbn) {
+        log.info("工具执行 query_stock: isbn={}", isbn);
         return bookRepository.findByIsbn(isbn)
                 .map(book -> String.format("《%s》- 状态：%s | 位置：%s", book.getTitle(), book.getStatus().getLabel(), book.getLocation()))
                 .orElse("未找到ISBN为 " + isbn + " 的图书");
@@ -71,7 +73,7 @@ public class LibraryTool {
             book.setStatus(BookStatus.BORROWED);
             bookRepository.save(book);
             borrowRecordRepository.save(new BorrowRecord(book, borrower));
-            log.info("借阅: {} → ISBN={} 《{}》", borrower, isbn, book.getTitle());
+            log.info("工具执行 borrow_book: borrower={}, isbn={}, title={}", borrower, isbn, book.getTitle());
             return "借阅成功！《" + book.getTitle() + "》已登记到「" + borrower + "」名下，请于30天内归还。";
         });
     }
@@ -95,7 +97,7 @@ public class LibraryTool {
                         borrowRecordRepository.save(record);
                     });
 
-            log.info("归还: ISBN={} 《{}》", isbn, book.getTitle());
+            log.info("工具执行 return_book: isbn={}, title={}", isbn, book.getTitle());
             return "归还成功！《" + book.getTitle() + "》已归还入库。";
         });
     }
@@ -103,23 +105,23 @@ public class LibraryTool {
     @Tool(name = "recommend_book", description = "根据用户的模糊需求推荐图书。用户可以说想看某类主题或风格的书，Agent 会通过语义检索匹配最相关的馆藏图书。优先使用此工具处理推荐类请求")
     public String recommendBook(
             @ToolParam(name = "query", description = "用户的阅读需求描述，如'想学并发编程'、'对设计模式感兴趣'") String query) {
-        if (vectorStore.size() == 0) {
+        if (!recommendationService.isReady()) {
+            log.warn("工具执行 recommend_book 失败: 向量索引未就绪, query={}", query);
             return "推荐服务暂不可用，向量索引为空。请确认图书数据已初始化。";
         }
         try {
-            double[] queryVector = embeddingService.embed(query);
-            var bookIds = vectorStore.search(queryVector, 3);
-            if (bookIds.isEmpty()) {
+            List<Book> books = recommendationService.search(query);
+            if (books.isEmpty()) {
                 return "抱歉，没有找到与「" + query + "」相关的馆藏图书。";
             }
             StringBuilder sb = new StringBuilder("【智能推荐 - 语义检索结果】\n");
-            for (Long id : bookIds) {
-                bookRepository.findById(id).ifPresent(book -> sb.append(formatBook(book)).append("\n"));
+            for (Book book : books) {
+                sb.append(formatBook(book)).append("\n");
             }
             sb.append("\n如需借阅，请告诉我 ISBN 编号和借阅人姓名。");
             return sb.toString();
         } catch (Exception e) {
-            log.error("语义推荐失败: {}", e.getMessage());
+            log.error("工具执行 recommend_book 失败: query={}", query, e);
             return "推荐服务暂时不可用，请稍后重试或使用 search_book 按书名关键词搜索。";
         }
     }

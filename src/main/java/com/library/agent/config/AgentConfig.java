@@ -2,8 +2,7 @@ package com.library.agent.config;
 
 import com.library.agent.repository.BookRepository;
 import com.library.agent.repository.BorrowRecordRepository;
-import com.library.agent.service.EmbeddingService;
-import com.library.agent.service.VectorStore;
+import com.library.agent.service.RecommendationService;
 import com.library.agent.tools.LibraryTool;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.formatter.dashscope.DashScopeChatFormatter;
@@ -11,6 +10,8 @@ import io.agentscope.core.memory.InMemoryMemory;
 import io.agentscope.core.model.DashScopeChatModel;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.tool.Toolkit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @Configuration
 public class AgentConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(AgentConfig.class);
 
     @Value("${agentscope.dashscope.api-key}")
     private String apiKey;
@@ -36,6 +39,15 @@ public class AgentConfig {
 
     @Bean
     public DashScopeChatModel dashScopeChatModel() {
+        if (apiKey == null || apiKey.isBlank()) {
+            // 显式失败优于静默失败：五个图书工具只通过 LLM tool calling 暴露，
+            // 没有其它 HTTP 入口，缺 key 时服务实际不提供任何功能。
+            // 若不在这里拦住，AgentScope 只会抛出难懂的 "API key is required"。
+            // 单独打一条 ERROR，避免可操作的提示被埋在 Bean 创建的异常链里。
+            log.error("DASHSCOPE_API_KEY 未配置，服务无法启动。请复制 .env.example 为 .env 并填入百炼 API Key，"
+                    + "或设置环境变量 DASHSCOPE_API_KEY=sk-xxx（获取地址 https://bailian.console.aliyun.com/）");
+            throw new IllegalStateException("DASHSCOPE_API_KEY 未配置，服务无法启动");
+        }
         return DashScopeChatModel.builder()
                 .apiKey(apiKey)
                 .modelName(modelName)
@@ -50,10 +62,9 @@ public class AgentConfig {
     public Toolkit toolkit(BookRepository bookRepository,
                            BorrowRecordRepository borrowRecordRepository,
                            TransactionTemplate transactionTemplate,
-                           EmbeddingService embeddingService,
-                           VectorStore vectorStore) {
+                           RecommendationService recommendationService) {
         LibraryTool libraryTool = new LibraryTool(bookRepository, borrowRecordRepository, transactionTemplate,
-                embeddingService, vectorStore);
+                recommendationService);
         Toolkit toolkit = new Toolkit();
         toolkit.registerTool(libraryTool);
         return toolkit;
