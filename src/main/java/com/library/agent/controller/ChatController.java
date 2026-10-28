@@ -5,6 +5,7 @@ import com.library.agent.dto.ChatRequest;
 import com.library.agent.dto.ChatResponse;
 import com.library.agent.dto.ErrorResponse;
 import com.library.agent.exception.AgentTimeoutException;
+import com.library.agent.service.AgentSessionManager;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.chat.completions.streaming.ChatCompletionsStreamingAdapter;
 import io.agentscope.core.message.Msg;
@@ -28,6 +29,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
@@ -38,13 +40,16 @@ public class ChatController {
 
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);
 
-    private final ReActAgent agent;
+    /** 调用方标识会话的请求头。同一会话复用同一份记忆，缺省时按无状态单轮处理。 */
+    static final String SESSION_HEADER = "X-Session-Id";
+
+    private final AgentSessionManager sessions;
     private final ChatCompletionsStreamingAdapter streamingAdapter;
     private final ObjectMapper objectMapper;
     private final Duration agentTimeout;
 
-    public ChatController(ReActAgent agent, @Value("${library.chat.timeout:60s}") Duration agentTimeout) {
-        this.agent = agent;
+    public ChatController(AgentSessionManager sessions, @Value("${library.chat.timeout:60s}") Duration agentTimeout) {
+        this.sessions = sessions;
         this.streamingAdapter = new ChatCompletionsStreamingAdapter();
         this.objectMapper = new ObjectMapper();
         this.agentTimeout = agentTimeout;
@@ -65,7 +70,8 @@ public class ChatController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/v1/chat/completions")
-    public ResponseEntity<?> chat(@RequestBody ChatRequest request) {
+    public ResponseEntity<?> chat(@RequestBody ChatRequest request,
+                                  @RequestHeader(value = SESSION_HEADER, required = false) String sessionId) {
         if (request.getMessages() == null || request.getMessages().isEmpty()) {
             throw new IllegalArgumentException("messages 不能为空");
         }
@@ -77,6 +83,7 @@ public class ChatController {
                 .role(MsgRole.USER)
                 .content(TextBlock.builder().text(userContent).build())
                 .build();
+        ReActAgent agent = sessions.forSession(sessionId);
 
         String model = request.getModel() != null ? request.getModel() : "qwen-plus";
         // 只记录长度，不落内容，避免把读者输入写进日志
@@ -148,7 +155,7 @@ public class ChatController {
             description = "返回服务名与 agent 名称。含数据库、向量索引等依赖状态的完整健康信息见 GET /actuator/health")
     @PostMapping("/api/health")
     public Map<String, String> health() {
-        return Map.of("status", "ok", "agent", agent.getName());
+        return Map.of("status", "ok", "agent", sessions.agentName());
     }
 
     private String extractLastUserMessage(List<ChatRequest.Message> messages) {

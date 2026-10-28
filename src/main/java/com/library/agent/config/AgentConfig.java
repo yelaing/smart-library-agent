@@ -4,9 +4,7 @@ import com.library.agent.repository.BookRepository;
 import com.library.agent.repository.BorrowRecordRepository;
 import com.library.agent.service.RecommendationService;
 import com.library.agent.tools.LibraryTool;
-import io.agentscope.core.ReActAgent;
 import io.agentscope.core.formatter.dashscope.DashScopeChatFormatter;
-import io.agentscope.core.memory.InMemoryMemory;
 import io.agentscope.core.model.DashScopeChatModel;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.tool.Toolkit;
@@ -30,12 +28,6 @@ public class AgentConfig {
 
     @Value("${agentscope.dashscope.model-name:qwen-plus}")
     private String modelName;
-
-    @Value("${agentscope.agent.name:图书馆助手}")
-    private String agentName;
-
-    @Value("${agentscope.agent.sys-prompt:你是学校图书馆的智能助手，帮助读者查书、借书、还书。}")
-    private String sysPrompt;
 
     @Bean
     public DashScopeChatModel dashScopeChatModel() {
@@ -68,16 +60,5 @@ public class AgentConfig {
         Toolkit toolkit = new Toolkit();
         toolkit.registerTool(libraryTool);
         return toolkit;
-    }
-
-    @Bean
-    public ReActAgent reActAgent(DashScopeChatModel model, Toolkit toolkit) {
-        return ReActAgent.builder()
-                .name(agentName)
-                .sysPrompt(sysPrompt)
-                .model(model)
-                .memory(new InMemoryMemory())
-                .toolkit(toolkit)
-                .build();
     }
 }

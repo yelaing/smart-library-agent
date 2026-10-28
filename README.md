@@ -14,6 +14,7 @@
 - **ReAct 推理 + 5 Tool Calling** —— Agent 自主判断意图，在 `recommend_book` / `search_book` / `query_stock` / `borrow_book` / `return_book` 之间调度
 - **事务一致性** —— 借书（改状态 + 建记录）与还书（改状态 + 补归还时间）在 `TransactionTemplate` 中原子执行
 - **OpenAI 兼容 API** —— `POST /v1/chat/completions` 支持流式与非流式，可直接接入任何兼容 OpenAI 协议的前端
+- **会话隔离** —— agent 实例按 `X-Session-Id` 分配而非容器单例，每个会话独立记忆；不传该头时走无状态单轮，避免不同读者互相污染上下文
 - **工程化** —— CI（编译 / Checkstyle / 测试 / 覆盖率门禁 / 镜像构建）、多阶段 Docker、Swagger UI、Actuator、traceId 贯穿日志、90%+ 测试覆盖
 
 ## 架构
@@ -141,6 +142,16 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 }
 ```
 
+多轮对话需在请求头带上 `X-Session-Id`：同一 sessionId 复用同一份对话记忆，
+不同 sessionId 互不可见。不带该头时按无状态单轮处理（不保留历史）。
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "X-Session-Id: reader-1001" \
+  -d '{"model":"qwen-plus","messages":[{"role":"user","content":"想学并发编程"}]}'
+```
+
 ### 错误响应
 
 所有错误统一为如下结构，`traceId` 与日志中的 `[traceId]` 一一对应，便于按 id 定位问题：
@@ -207,6 +218,8 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 | `library.embedding.connect-timeout` | `5s` | Embedding 接口连接超时 |
 | `library.embedding.read-timeout` | `15s` | Embedding 接口读超时 |
 | `library.recommend.min-score` | `0.3` | 语义推荐的余弦相似度下限，低于该值的结果不返回 |
+| `library.session.max` | `500` | 内存中保留的会话 agent 实例上限 |
+| `library.session.ttl` | `30m` | 会话空闲多久后被回收 |
 | `library.vector-init.enabled` | `true` | 是否在启动时构建向量索引 |
 | `spring.cache.caffeine.spec` | `maximumSize=500,expireAfterWrite=10m` | 推荐缓存容量与 TTL |
 
@@ -227,7 +240,7 @@ mvn verify    # 编译 + Checkstyle + 测试 + 覆盖率门禁 + 打包（CI 执
 
 | 项 | 现状 |
 |------|------|
-| 测试数量 | 86 |
+| 测试数量 | 87 |
 | 行覆盖率 | **96%**（排除 dto / entity / 启动类） |
 | 覆盖率门禁 | 行覆盖 < 80% 则构建失败（`mvn verify`） |
 | 代码风格 | Checkstyle 10.26.1，规则集见 `config/checkstyle/checkstyle.xml`，0 违规 |
@@ -246,7 +259,7 @@ mvn verify    # 编译 + Checkstyle + 测试 + 覆盖率门禁 + 打包（CI 执
 ├── src/main/java/com/library/agent/
 │   ├── LibraryAgentApplication.java
 │   ├── config/
-│   │   ├── AgentConfig.java             # ReActAgent 手动组装（模型/记忆/工具）
+│   │   ├── AgentConfig.java             # 模型与工具集装配
 │   │   ├── CacheConfig.java             # @EnableCaching
 │   │   ├── TraceIdFilter.java           # traceId 生成/MDC/回写响应头
 │   │   ├── RestTemplateConfig.java      # 带超时的 HTTP 客户端
@@ -260,7 +273,8 @@ mvn verify    # 编译 + Checkstyle + 测试 + 覆盖率门禁 + 打包（CI 执
 │   ├── health/                          # VectorStoreHealthIndicator
 │   ├── repository/                      # JPA 仓库
 │   ├── service/
-│   │   ├── RecommendationService.java   # 语义推荐 + 缓存
+│   │   ├── AgentSessionManager.java     # 按 sessionId 分配 agent，隔离对话记忆
+│   │   ├── RecommendationService.java   # 语义推荐 + 阈值过滤 + 缓存
 │   │   ├── EmbeddingService.java        # 文本向量化（双 provider）
 │   │   ├── VectorStore.java             # 内存向量索引 + 余弦相似度
 │   │   └── VectorInitService.java       # 启动时构建索引
@@ -278,6 +292,8 @@ mvn verify    # 编译 + Checkstyle + 测试 + 覆盖率门禁 + 打包（CI 执
 - **相似度阈值是经验值**：`library.recommend.min-score` 默认 0.3，未用标注评测集校准。真实的取值应当拿一批「问题 → 期望命中的书」跑出来，同时看召回率与误召回，目前只能靠日志里的 `topScore` 人工观察
 - **没有检索效果评测**：改 Embedding 模型、调 `TOP_K` 或加 rerank 时，无法量化判断是变好还是变坏。下一步应先建评测集，再谈优化
 - **向量索引在内存中**：适合当前单实例规模。图书量级增长或需要多实例共享时，应换成向量数据库（如 pgvector / Milvus）
+- **会话记忆在进程内**：agent 实例与对话记忆随进程存活，重启即丢失；多实例部署时同一 sessionId 打到不同实例会拿到不同记忆。生产环境应把记忆外置到 Redis 等共享存储
+- **同一会话的并发请求会写同一份记忆**：同一 sessionId 的两个请求同时到达时，记忆写入顺序不确定。需要严格串行时应由调用方保证，或在会话层加锁
 - **缓存为进程内 Caffeine**：多实例部署时各实例缓存独立，一致性弱于集中式缓存
 - **MDC 不跨线程**：SSE 流式分片的日志不带 traceId（流在 `boundedElastic` 线程产出），请求入口与出口日志正常
 - **`ChatController` 尚有 8 行未覆盖**：SSE 分片序列化与错误兜底分支需要构造 AgentScope 内部的 chunk 对象，为避免测试与第三方内部实现强耦合，未强行覆盖

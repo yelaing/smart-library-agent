@@ -3,16 +3,20 @@ package com.library.agent.controller;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.library.agent.service.AgentSessionManager;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.message.TextBlock;
 import java.util.concurrent.TimeoutException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,12 +38,19 @@ class ChatControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ReActAgent agent;
+    private AgentSessionManager sessions;
+
+    private final ReActAgent agent = mock(ReActAgent.class);
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(sessions.forSession(any())).thenReturn(agent);
+    }
 
     @Test
     @DisplayName("健康检查返回 ok 状态")
     void health_shouldReturnOk() throws Exception {
-        when(agent.getName()).thenReturn("图书馆助手");
+        when(sessions.agentName()).thenReturn("图书馆助手");
 
         mockMvc.perform(post("/api/health"))
                 .andExpect(status().isOk())

@@ -48,6 +48,11 @@ library:
     # 低于该分数视为不相关直接丢弃，宁可返回空让上层如实说"没有相关馆藏"，也不凑数。
     # 取值需用真实查询的 topScore 日志校准：太高会漏掉相关图书，太低等于没有阈值。
     min-score: 0.3
+  session:
+    # 会话记忆实例上限与空闲回收时间。会话内存放在进程内，
+    # 多实例部署时应改为外部存储（如 Redis）共享
+    max: 500
+    ttl: 30m
   embedding:
     connect-timeout: 5s
     read-timeout: 15s
