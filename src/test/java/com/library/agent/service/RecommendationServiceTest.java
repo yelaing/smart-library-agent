@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,6 +27,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("语义推荐服务测试")
 class RecommendationServiceTest {
 
+    private static final double MIN_SCORE = 0.3;
+
     @Mock
     private BookRepository bookRepository;
     @Mock
@@ -37,7 +40,7 @@ class RecommendationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new RecommendationService(bookRepository, embeddingService, vectorStore);
+        service = new RecommendationService(bookRepository, embeddingService, vectorStore, MIN_SCORE);
     }
 
     @Test
@@ -47,13 +50,50 @@ class RecommendationServiceTest {
         Book algorithm = book(2L, "算法导论");
         when(vectorStore.size()).thenReturn(2);
         when(embeddingService.embed("想学Java")).thenReturn(new double[]{1, 0});
-        when(vectorStore.search(any(double[].class), eq(3))).thenReturn(List.of(1L, 2L));
+        when(vectorStore.search(any(double[].class), eq(3))).thenReturn(List.of(
+                new VectorStore.ScoredBook(1L, 0.9),
+                new VectorStore.ScoredBook(2L, 0.6)));
         when(bookRepository.findById(1L)).thenReturn(Optional.of(spring));
         when(bookRepository.findById(2L)).thenReturn(Optional.of(algorithm));
 
         List<Book> result = service.search("想学Java");
 
         assertEquals(List.of(spring, algorithm), result);
+    }
+
+    @Test
+    @DisplayName("相似度低于阈值的命中被丢弃，不拿无关图书凑满 topK")
+    void shouldDropHitsBelowMinScore() {
+        Book spring = book(1L, "Spring实战");
+        when(vectorStore.size()).thenReturn(2);
+        when(embeddingService.embed("想学Java")).thenReturn(new double[]{1, 0});
+        when(vectorStore.search(any(double[].class), eq(3))).thenReturn(List.of(
+                new VectorStore.ScoredBook(1L, 0.8),
+                new VectorStore.ScoredBook(2L, 0.1)));
+        when(bookRepository.findById(1L)).thenReturn(Optional.of(spring));
+
+        List<Book> result = service.search("想学Java");
+
+        assertEquals(List.of(spring), result);
+        verify(bookRepository, never()).findById(2L);
+    }
+
+    @Test
+    @DisplayName("全部命中都低于阈值时返回空列表，让上层如实告知没有相关馆藏")
+    void shouldReturnEmpty_whenAllHitsBelowMinScore() {
+        when(vectorStore.size()).thenReturn(2);
+        when(embeddingService.embed("怎么做红烧肉")).thenReturn(new double[]{1, 0});
+        when(vectorStore.search(any(double[].class), eq(3))).thenReturn(List.of(
+                new VectorStore.ScoredBook(1L, 0.2),
+                new VectorStore.ScoredBook(2L, 0.1)));
+        // 这两本确实在库里：断言"即使回表能查到，也因分数不够而必须返回空"，
+        // 否则去掉阈值过滤后测试依然会通过，失去鉴别力
+        lenient().when(bookRepository.findById(1L)).thenReturn(Optional.of(book(1L, "Spring实战")));
+        lenient().when(bookRepository.findById(2L)).thenReturn(Optional.of(book(2L, "算法导论")));
+
+        List<Book> result = service.search("怎么做红烧肉");
+
+        assertTrue(result.isEmpty());
     }
 
     @Test
@@ -84,7 +124,9 @@ class RecommendationServiceTest {
         Book spring = book(1L, "Spring实战");
         when(vectorStore.size()).thenReturn(2);
         when(embeddingService.embed("想学Java")).thenReturn(new double[]{1, 0});
-        when(vectorStore.search(any(double[].class), eq(3))).thenReturn(List.of(1L, 99L));
+        when(vectorStore.search(any(double[].class), eq(3))).thenReturn(List.of(
+                new VectorStore.ScoredBook(1L, 0.9),
+                new VectorStore.ScoredBook(99L, 0.8)));
         when(bookRepository.findById(1L)).thenReturn(Optional.of(spring));
         when(bookRepository.findById(99L)).thenReturn(Optional.empty());
 

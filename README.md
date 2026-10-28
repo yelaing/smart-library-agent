@@ -6,11 +6,11 @@
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://adoptium.net/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.4-green.svg)](https://spring.io/projects/spring-boot)
 [![AgentScope](https://img.shields.io/badge/AgentScope-1.0.12-blue.svg)](https://github.com/agentscope-ai/agentscope-java)
-[![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen.svg)](#测试与代码质量)
+[![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen.svg)](#测试与代码质量)
 
 ## 核心亮点
 
-- **RAG 语义推荐** —— 图书简介经 Embedding 向量化后存内存索引，用户说"想学并发编程"时按余弦相似度检索最相关的馆藏，而不是做关键词匹配
+- **RAG 语义推荐** —— 图书简介经 Embedding 向量化后存内存索引，用户说"想学并发编程"时按余弦相似度检索最相关的馆藏，而不是做关键词匹配；低于相似度阈值的命中会被丢弃，宁可如实说"没有相关馆藏"也不拿无关图书凑数
 - **ReAct 推理 + 5 Tool Calling** —— Agent 自主判断意图，在 `recommend_book` / `search_book` / `query_stock` / `borrow_book` / `return_book` 之间调度
 - **事务一致性** —— 借书（改状态 + 建记录）与还书（改状态 + 补归还时间）在 `TransactionTemplate` 中原子执行
 - **OpenAI 兼容 API** —— `POST /v1/chat/completions` 支持流式与非流式，可直接接入任何兼容 OpenAI 协议的前端
@@ -206,12 +206,14 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 | `library.chat.timeout` | `60s` | Agent 单次调用超时上限 |
 | `library.embedding.connect-timeout` | `5s` | Embedding 接口连接超时 |
 | `library.embedding.read-timeout` | `15s` | Embedding 接口读超时 |
+| `library.recommend.min-score` | `0.3` | 语义推荐的余弦相似度下限，低于该值的结果不返回 |
 | `library.vector-init.enabled` | `true` | 是否在启动时构建向量索引 |
 | `spring.cache.caffeine.spec` | `maximumSize=500,expireAfterWrite=10m` | 推荐缓存容量与 TTL |
 
 ## 数据库
 
-启动时通过 JPA 自动建表并插入 5 本种子图书（仅当表为空）。
+启动时通过 JPA 自动建表，并从 `src/main/resources/books.json` 读入 50 本种子图书（仅当表为空）。
+书目外置成数据文件而非硬编码在代码里，现场交付时直接替换这份文件即可换成本馆的真实书目。
 
 - `books`：`isbn` 唯一索引；`title` **刻意不建索引** —— 检索走 `findByTitleContaining` 生成 `LIKE '%关键词%'`，前导通配符无法命中 B-tree 索引
 - `borrow_records`：`(book_id, return_date)` 复合索引，服务于还书时的查询
@@ -225,8 +227,8 @@ mvn verify    # 编译 + Checkstyle + 测试 + 覆盖率门禁 + 打包（CI 执
 
 | 项 | 现状 |
 |------|------|
-| 测试数量 | 81 |
-| 行覆盖率 | **97%**（排除 dto / entity / 启动类） |
+| 测试数量 | 86 |
+| 行覆盖率 | **96%**（排除 dto / entity / 启动类） |
 | 覆盖率门禁 | 行覆盖 < 80% 则构建失败（`mvn verify`） |
 | 代码风格 | Checkstyle 10.26.1，规则集见 `config/checkstyle/checkstyle.xml`，0 违规 |
 
@@ -250,7 +252,7 @@ mvn verify    # 编译 + Checkstyle + 测试 + 覆盖率门禁 + 打包（CI 执
 │   │   ├── RestTemplateConfig.java      # 带超时的 HTTP 客户端
 │   │   ├── OpenApiConfig.java           # OpenAPI 元信息
 │   │   ├── GlobalExceptionHandler.java  # 统一异常 + 错误码
-│   │   └── DataInitializer.java         # 种子数据
+│   │   └── DataInitializer.java         # 从 books.json 导入种子书目
 │   ├── controller/ChatController.java   # OpenAI 兼容接口 + 超时兜底
 │   ├── dto/                             # ChatRequest / ChatResponse / ErrorResponse
 │   ├── entity/                          # Book / BookStatus / BorrowRecord
@@ -265,6 +267,7 @@ mvn verify    # 编译 + Checkstyle + 测试 + 覆盖率门禁 + 打包（CI 执
 │   └── tools/LibraryTool.java           # 5 个 @Tool，LLM 参数适配层
 ├── src/main/resources/
 │   ├── application*.yml                 # 多环境配置
+│   ├── books.json                       # 种子书目（现场可整份替换）
 │   ├── logback-spring.xml               # 控制台 + 滚动文件，含 traceId
 │   └── static/index.html                # 内置调试页面
 └── src/test/java/com/library/agent/     # 单元测试 + 集成测试
@@ -272,6 +275,8 @@ mvn verify    # 编译 + Checkstyle + 测试 + 覆盖率门禁 + 打包（CI 执
 
 ## 已知取舍
 
+- **相似度阈值是经验值**：`library.recommend.min-score` 默认 0.3，未用标注评测集校准。真实的取值应当拿一批「问题 → 期望命中的书」跑出来，同时看召回率与误召回，目前只能靠日志里的 `topScore` 人工观察
+- **没有检索效果评测**：改 Embedding 模型、调 `TOP_K` 或加 rerank 时，无法量化判断是变好还是变坏。下一步应先建评测集，再谈优化
 - **向量索引在内存中**：适合当前单实例规模。图书量级增长或需要多实例共享时，应换成向量数据库（如 pgvector / Milvus）
 - **缓存为进程内 Caffeine**：多实例部署时各实例缓存独立，一致性弱于集中式缓存
 - **MDC 不跨线程**：SSE 流式分片的日志不带 traceId（流在 `boundedElastic` 线程产出），请求入口与出口日志正常

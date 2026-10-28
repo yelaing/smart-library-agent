@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -26,12 +27,15 @@ public class RecommendationService {
     private final BookRepository bookRepository;
     private final EmbeddingService embeddingService;
     private final VectorStore vectorStore;
+    private final double minScore;
 
     public RecommendationService(BookRepository bookRepository, EmbeddingService embeddingService,
-                                 VectorStore vectorStore) {
+                                 VectorStore vectorStore,
+                                 @Value("${library.recommend.min-score:0.3}") double minScore) {
         this.bookRepository = bookRepository;
         this.embeddingService = embeddingService;
         this.vectorStore = vectorStore;
+        this.minScore = minScore;
     }
 
     /**
@@ -43,6 +47,10 @@ public class RecommendationService {
 
     /**
      * 按语义检索最相关的馆藏图书。
+     *
+     * <p>相似度低于 {@code library.recommend.min-score} 的命中会被丢弃：向量检索在 top-k 上
+     * 总能返回结果，即使图书与查询毫无关系。宁可返回空让上层如实告知"馆藏中没有相关图书"，
+     * 也不要用不相关的书凑满 3 条。</p>
      *
      * <p>缓存策略：以 query 文本为 key。空结果不缓存（{@code unless}），
      * 向量化失败时异常向上抛出、同样不会落缓存 —— 避免把一次瞬时故障固化成缓存条目。</p>
@@ -56,12 +64,16 @@ public class RecommendationService {
         }
         long start = System.currentTimeMillis();
         double[] queryVector = embeddingService.embed(query);
-        List<Book> books = vectorStore.search(queryVector, TOP_K).stream()
-                .map(bookRepository::findById)
+        List<VectorStore.ScoredBook> hits = vectorStore.search(queryVector, TOP_K);
+        double topScore = hits.isEmpty() ? 0 : hits.get(0).score();
+        List<Book> books = hits.stream()
+                .filter(hit -> hit.score() >= minScore)
+                .map(hit -> bookRepository.findById(hit.id()))
                 .flatMap(Optional::stream)
                 .toList();
-        log.info("语义推荐完成: query={}, hits={}, cost={}ms", query, books.size(),
-                System.currentTimeMillis() - start);
+        // 记录 top1 分数便于用真实查询反推阈值是否合理
+        log.info("语义推荐完成: query={}, hits={}, topScore={}, minScore={}, cost={}ms", query, books.size(),
+                String.format("%.3f", topScore), minScore, System.currentTimeMillis() - start);
         return books;
     }
 }
