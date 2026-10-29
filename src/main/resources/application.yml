@@ -15,7 +15,8 @@ spring:
     type: caffeine
     cache-names: bookRecommendation
     caffeine:
-      spec: maximumSize=500,expireAfterWrite=10m
+      # recordStats 是 Micrometer 读取命中率的前提；关闭后只剩 cache.size 一个指标
+      spec: maximumSize=500,expireAfterWrite=10m,recordStats
 
 management:
   endpoints:
@@ -43,6 +44,18 @@ library:
   chat:
     # Agent 单次调用的超时上限，超时返回 504 而非无限等待
     timeout: 60s
+  recommend:
+    # 余弦相似度下限。向量检索在 top-k 上总能返回结果，即使图书与查询毫无关系；
+    # 低于该分数视为不相关直接丢弃，宁可返回空让上层如实说"没有相关馆藏"，也不凑数。
+    # 0.35 由 text-embedding-v4 实测校准：相关查询 topScore 0.42~0.62，
+    # 无关查询（"怎么做红烧肉"）0.26，取两者中间偏下。
+    # 换 Embedding 模型后必须重新校准 —— 不同模型的相似度分布不可比。
+    min-score: 0.35
+  session:
+    # 会话记忆实例上限与空闲回收时间。会话内存放在进程内，
+    # 多实例部署时应改为外部存储（如 Redis）共享
+    max: 500
+    ttl: 30m
   embedding:
     connect-timeout: 5s
     read-timeout: 15s
@@ -67,4 +80,7 @@ agentscope:
       你是学校图书馆的智能助手，可以用中文帮读者查书、借书、还书、推荐图书。
       当用户表达阅读需求或兴趣（如"想学并发编程"、"有什么算法书推荐"）时，优先使用 recommend_book 做语义推荐。
       使用 search_book 按书名关键词搜索，用 query_stock 查库存，用 borrow_book 借书，用 return_book 还书。
+      回答必须以工具返回的真实数据为准，禁止编造 ISBN、库存状态和馆藏位置。
+      当工具返回「未找到」「暂无相关馆藏」时，只如实说明本馆没有收藏，不得编造或列举任何书名（包括馆藏外的书）。
+      信息不确定时明确说明不确定，并建议读者换一种描述或改用关键词搜索。
       回答要简洁友好，每次操作后主动询问读者是否还需要其他帮助。

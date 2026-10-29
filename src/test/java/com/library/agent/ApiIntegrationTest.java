@@ -2,6 +2,8 @@ package com.library.agent;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -10,10 +12,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.library.agent.service.AgentSessionManager;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.message.TextBlock;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +46,16 @@ class ApiIntegrationTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ReActAgent agent;
+    private AgentSessionManager sessions;
+
+    private final ReActAgent agent = mock(ReActAgent.class);
+    private final AgentSessionManager.SessionContext session =
+            new AgentSessionManager.SessionContext(agent, new java.util.concurrent.Semaphore(1));
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(sessions.forSession(any())).thenReturn(session);
+    }
 
     @Test
     @DisplayName("健康检查暴露数据库与向量索引组件")
@@ -117,7 +130,7 @@ class ApiIntegrationTest {
     @Test
     @DisplayName("旧版 /api/health 接口保持可用，未被 Actuator 取代")
     void legacyHealthEndpoint_shouldStillWork() throws Exception {
-        when(agent.getName()).thenReturn("图书馆助手");
+        when(sessions.agentName()).thenReturn("图书馆助手");
 
         mockMvc.perform(post("/api/health"))
                 .andExpect(status().isOk())

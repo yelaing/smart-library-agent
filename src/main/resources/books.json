@@ -1,0 +1,402 @@
+[
+  {
+    "isbn": "9787111636996",
+    "title": "Spring实战",
+    "author": "Craig Walls",
+    "status": "AVAILABLE",
+    "location": "A区-3排-12号",
+    "description": "全面介绍Spring框架核心特性的实战指南，涵盖依赖注入、AOP、Spring MVC、Spring Boot等核心技术，适合Java后端开发者快速上手企业级应用开发"
+  },
+  {
+    "isbn": "9787121429013",
+    "title": "深入理解Java虚拟机",
+    "author": "周志明",
+    "status": "BORROWED",
+    "location": "A区-1排-05号",
+    "description": "深入剖析JVM内部机制的经典之作，涵盖内存管理、类加载、垃圾回收、性能调优等内容，是Java开发者进阶必读的底层原理书籍"
+  },
+  {
+    "isbn": "9787115580245",
+    "title": "TCP/IP详解",
+    "author": "Kevin Fall",
+    "status": "AVAILABLE",
+    "location": "B区-2排-08号",
+    "description": "计算机网络领域的权威著作，系统讲解TCP/IP协议族的工作原理，从链路层到应用层逐层剖析，适合想深入理解网络通信原理的读者"
+  },
+  {
+    "isbn": "9787115607348",
+    "title": "算法导论",
+    "author": "Thomas Cormen",
+    "status": "AVAILABLE",
+    "location": "B区-4排-01号",
+    "description": "计算机科学领域公认的算法圣经，涵盖排序、图算法、动态规划、数据结构等核心主题，注重算法的正确性证明和复杂度分析，适合想打牢算法基础的学生"
+  },
+  {
+    "isbn": "9787115546081",
+    "title": "设计模式",
+    "author": "GoF",
+    "status": "BORROWED",
+    "location": "A区-2排-15号",
+    "description": "面向对象设计的里程碑著作，详细讲解了23种经典设计模式及其应用场景，帮助开发者编写可复用、可维护的优雅代码，是软件工程必读经典"
+  },
+  {
+    "isbn": "9787111544937",
+    "title": "Java编程思想",
+    "author": "Bruce Eckel",
+    "status": "AVAILABLE",
+    "location": "A区-3排-01号",
+    "description": "Java领域的经典入门与进阶读物，系统讲解面向对象、泛型、集合、并发与IO，强调语言设计背后的思想，适合希望夯实Java基础的开发者"
+  },
+  {
+    "isbn": "9787111213826",
+    "title": "Effective Java",
+    "author": "Joshua Bloch",
+    "status": "AVAILABLE",
+    "location": "A区-3排-02号",
+    "description": "Java进阶必读，以条目形式总结设计API、类和方法的实践经验，涵盖泛型、枚举、并发与序列化的正确用法，帮助写出健壮可维护的代码"
+  },
+  {
+    "isbn": "9787115191120",
+    "title": "Java并发编程实战",
+    "author": "Brian Goetz",
+    "status": "AVAILABLE",
+    "location": "A区-3排-03号",
+    "description": "多线程与并发编程的权威指南，深入讲解线程安全、锁、原子变量、线程池与并发容器，剖析Java内存模型与可见性问题，适合系统掌握并发编程的读者"
+  },
+  {
+    "isbn": "9787115475893",
+    "title": "Java性能权威指南",
+    "author": "Scott Oaks",
+    "status": "BORROWED",
+    "location": "A区-3排-04号",
+    "description": "从JVM调优到应用层性能优化，讲解垃圾回收器选择、堆内存配置、即时编译与性能剖析工具的使用，帮助定位线上性能瓶颈"
+  },
+  {
+    "isbn": "9787115428028",
+    "title": "Python编程：从入门到实践",
+    "author": "Eric Matthes",
+    "status": "AVAILABLE",
+    "location": "A区-4排-01号",
+    "description": "面向零基础读者的Python入门书，前半部分讲语法、数据结构、函数与类，后半部分通过小项目练习Web开发与数据可视化，适合快速上手"
+  },
+  {
+    "isbn": "9787115544550",
+    "title": "流畅的Python",
+    "author": "Luciano Ramalho",
+    "status": "AVAILABLE",
+    "location": "A区-4排-02号",
+    "description": "深入讲解Python的数据模型、迭代器、生成器、装饰器与元编程，帮助开发者写出更地道更高效的Python代码，适合有基础后进阶阅读"
+  },
+  {
+    "isbn": "9787111670921",
+    "title": "Python数据科学手册",
+    "author": "Jake VanderPlas",
+    "status": "AVAILABLE",
+    "location": "A区-4排-03号",
+    "description": "系统介绍NumPy、Pandas、Matplotlib与Scikit-Learn的使用，覆盖数据清洗、分析与可视化的完整流程，是数据分析入门的实用参考"
+  },
+  {
+    "isbn": "9787121355893",
+    "title": "Go程序设计语言",
+    "author": "Alan Donovan",
+    "status": "AVAILABLE",
+    "location": "A区-5排-01号",
+    "description": "Go语言官方团队撰写的权威教程，讲解语法、接口、并发模型与包管理，配合大量示例说明如何编写简洁高效的Go程序"
+  },
+  {
+    "isbn": "9787111641588",
+    "title": "Go语言高级编程",
+    "author": "柴树杉",
+    "status": "BORROWED",
+    "location": "A区-5排-02号",
+    "description": "面向进阶读者的Go实践指南，涵盖CGO、反射、goroutine调度、微服务与分布式系统等主题，适合准备用Go做后端服务的开发者"
+  },
+  {
+    "isbn": "9787111677579",
+    "title": "Rust程序设计语言",
+    "author": "Steve Klabnik",
+    "status": "AVAILABLE",
+    "location": "A区-5排-03号",
+    "description": "Rust官方教程中文版，讲解所有权、借用、生命周期与trait等核心概念，通过项目实战帮助读者掌握这门注重内存安全的系统级语言"
+  },
+  {
+    "isbn": "9787111407003",
+    "title": "C++ Primer",
+    "author": "Stanley Lippman",
+    "status": "AVAILABLE",
+    "location": "A区-6排-01号",
+    "description": "C++领域的经典教材，全面覆盖语言基础、标准库容器、面向对象与泛型编程，配套大量练习，适合系统学习C++"
+  },
+  {
+    "isbn": "9787111466020",
+    "title": "Effective C++",
+    "author": "Scott Meyers",
+    "status": "AVAILABLE",
+    "location": "A区-6排-02号",
+    "description": "以条款形式总结C++的最佳实践，讲解构造析构、资源管理、继承与模板的常见陷阱，帮助写出正确高效的C++代码"
+  },
+  {
+    "isbn": "9787115545381",
+    "title": "JavaScript高级程序设计",
+    "author": "Nicholas Zakas",
+    "status": "AVAILABLE",
+    "location": "A区-7排-01号",
+    "description": "前端开发者的经典参考书，系统讲解JavaScript语言核心、DOM操作、事件模型与异步编程，覆盖ES6之后的新特性"
+  },
+  {
+    "isbn": "9787121362215",
+    "title": "你不知道的JavaScript",
+    "author": "Kyle Simpson",
+    "status": "AVAILABLE",
+    "location": "A区-7排-02号",
+    "description": "深入剖析JavaScript的作用域、闭包、this绑定、原型链与类型转换，解释许多反直觉行为背后的语言机制"
+  },
+  {
+    "isbn": "9787115540751",
+    "title": "深入浅出Node.js",
+    "author": "朴灵",
+    "status": "AVAILABLE",
+    "location": "A区-7排-03号",
+    "description": "讲解Node.js的异步IO、事件循环、模块机制与内存管理，帮助后端开发者理解单线程高并发的实现原理"
+  },
+  {
+    "isbn": "9787115273635",
+    "title": "高性能MySQL",
+    "author": "Baron Schwartz",
+    "status": "AVAILABLE",
+    "location": "C区-1排-01号",
+    "description": "MySQL领域的权威著作，涵盖索引设计、查询优化、锁与事务、复制与高可用架构，适合需要处理大规模数据访问的后端工程师"
+  },
+  {
+    "isbn": "9787111558422",
+    "title": "Redis设计与实现",
+    "author": "黄健宏",
+    "status": "BORROWED",
+    "location": "C区-1排-02号",
+    "description": "深入剖析Redis的内部数据结构、持久化机制、主从复制与集群方案，既是使用手册也是理解内存数据库设计的好材料"
+  },
+  {
+    "isbn": "9787111619295",
+    "title": "数据库系统概念",
+    "author": "Silberschatz",
+    "status": "AVAILABLE",
+    "location": "C区-1排-03号",
+    "description": "数据库领域的经典教材，讲解关系模型、SQL、事务、并发控制与恢复机制，理论扎实，适合打牢数据库基础"
+  },
+  {
+    "isbn": "9787111452997",
+    "title": "计算机网络",
+    "author": "谢希仁",
+    "status": "AVAILABLE",
+    "location": "B区-1排-01号",
+    "description": "国内高校广泛采用的计算机网络教材，按分层结构讲解物理层到应用层的协议原理，内容系统，适合打基础"
+  },
+  {
+    "isbn": "9787115576200",
+    "title": "操作系统导论",
+    "author": "Remzi Arpaci-Dusseau",
+    "status": "AVAILABLE",
+    "location": "B区-1排-02号",
+    "description": "以对话式风格讲解进程、调度、虚拟内存、并发与持久化，配合作业与实验，是理解操作系统原理的友好入门书"
+  },
+  {
+    "isbn": "9787115275912",
+    "title": "UNIX环境高级编程",
+    "author": "Richard Stevens",
+    "status": "AVAILABLE",
+    "location": "B区-1排-03号",
+    "description": "UNIX与Linux系统编程的经典，详细讲解文件IO、进程控制、信号、线程与进程间通信，是系统编程的必备参考"
+  },
+  {
+    "isbn": "9787115544666",
+    "title": "深度学习",
+    "author": "Ian Goodfellow",
+    "status": "AVAILABLE",
+    "location": "D区-1排-01号",
+    "description": "深度学习领域的奠基性教材，系统讲解线性代数基础、前馈网络、正则化、优化算法与卷积循环网络，理论深度较高"
+  },
+  {
+    "isbn": "9787115605467",
+    "title": "机器学习",
+    "author": "周志华",
+    "status": "AVAILABLE",
+    "location": "D区-1排-02号",
+    "description": "国内广泛使用的机器学习教材，覆盖监督学习、无监督学习、集成学习与神经网络，兼顾理论推导与算法直觉"
+  },
+  {
+    "isbn": "9787115461476",
+    "title": "统计学习方法",
+    "author": "李航",
+    "status": "BORROWED",
+    "location": "D区-1排-03号",
+    "description": "系统讲解感知机、支持向量机、决策树、隐马尔可夫模型等经典统计学习方法，推导清晰，适合入门机器学习理论"
+  },
+  {
+    "isbn": "9787111707290",
+    "title": "动手学深度学习",
+    "author": "李沐",
+    "status": "AVAILABLE",
+    "location": "D区-1排-04号",
+    "description": "以代码驱动的方式讲解深度学习，覆盖线性模型、卷积网络、循环网络与注意力机制，配套可运行的示例，实践性强"
+  },
+  {
+    "isbn": "9787111748931",
+    "title": "大规模语言模型：从理论到实践",
+    "author": "张奇",
+    "status": "AVAILABLE",
+    "location": "D区-2排-01号",
+    "description": "介绍大语言模型的基本原理、训练流程与微调方法，涵盖预训练、指令微调、强化学习对齐与评估，适合了解大模型工程实践"
+  },
+  {
+    "isbn": "9787111714373",
+    "title": "自然语言处理入门",
+    "author": "何晗",
+    "status": "AVAILABLE",
+    "location": "D区-2排-02号",
+    "description": "从分词、词性标注讲到句法分析与文本分类，结合中文语料与开源工具，适合作为自然语言处理的入门读物"
+  },
+  {
+    "isbn": "9787115373991",
+    "title": "重构：改善既有代码的设计",
+    "author": "Martin Fowler",
+    "status": "AVAILABLE",
+    "location": "C区-2排-01号",
+    "description": "系统总结代码坏味道与重构手法，讲解如何在不改变外部行为的前提下改善内部结构，是提升代码质量的必读书"
+  },
+  {
+    "isbn": "9787115540683",
+    "title": "代码整洁之道",
+    "author": "Robert Martin",
+    "status": "AVAILABLE",
+    "location": "C区-2排-02号",
+    "description": "围绕命名、函数、注释、错误处理与单元测试讲解如何写出清晰可维护的代码，强调整洁代码对长期维护的价值"
+  },
+  {
+    "isbn": "9787111600817",
+    "title": "领域驱动设计",
+    "author": "Eric Evans",
+    "status": "AVAILABLE",
+    "location": "C区-2排-03号",
+    "description": "DDD的开山之作，讲解实体、值对象、聚合、限界上下文与领域事件，帮助在复杂业务系统中建立清晰的领域模型"
+  },
+  {
+    "isbn": "9787111670013",
+    "title": "架构整洁之道",
+    "author": "Robert Martin",
+    "status": "BORROWED",
+    "location": "C区-2排-04号",
+    "description": "讲解软件架构的基本原则与依赖倒置，讨论分层、边界与组件划分，帮助构建易于演进的系统结构"
+  },
+  {
+    "isbn": "9787115215838",
+    "title": "测试驱动开发",
+    "author": "Kent Beck",
+    "status": "AVAILABLE",
+    "location": "C区-2排-05号",
+    "description": "TDD的经典著作，通过红绿重构的循环演示如何以测试驱动设计，说明测试如何帮助控制复杂度"
+  },
+  {
+    "isbn": "9787121363014",
+    "title": "Kubernetes权威指南",
+    "author": "龚正",
+    "status": "AVAILABLE",
+    "location": "C区-3排-01号",
+    "description": "系统讲解Kubernetes的架构、Pod、Service、存储与调度机制，结合实际运维场景，适合准备在生产环境使用容器编排的工程师"
+  },
+  {
+    "isbn": "9787111609513",
+    "title": "Docker技术入门与实战",
+    "author": "杨保华",
+    "status": "AVAILABLE",
+    "location": "C区-3排-02号",
+    "description": "介绍Docker的镜像、容器、网络与数据卷，配合Compose与私有仓库的实践，适合从零开始掌握容器化部署"
+  },
+  {
+    "isbn": "9787115542786",
+    "title": "云原生服务网格Istio",
+    "author": "张超盟",
+    "status": "BORROWED",
+    "location": "C区-3排-03号",
+    "description": "讲解Istio的流量管理、安全策略与可观测性，帮助理解服务网格在微服务治理中的作用与落地方式"
+  },
+  {
+    "isbn": "9787115423221",
+    "title": "鸟哥的Linux私房菜",
+    "author": "鸟哥",
+    "status": "AVAILABLE",
+    "location": "C区-3排-04号",
+    "description": "Linux入门与运维的经典读物，覆盖命令操作、文件系统、权限管理、进程与服务配置，适合初学者系统上手Linux"
+  },
+  {
+    "isbn": "9787115475084",
+    "title": "Linux系统编程",
+    "author": "Robert Love",
+    "status": "AVAILABLE",
+    "location": "B区-1排-04号",
+    "description": "聚焦Linux系统调用与编程接口，讲解文件、进程、线程、信号与内存映射，适合需要深入理解操作系统的开发者"
+  },
+  {
+    "isbn": "9787111407010",
+    "title": "具体数学",
+    "author": "Ronald Graham",
+    "status": "AVAILABLE",
+    "location": "D区-3排-01号",
+    "description": "讲解计算机科学中常用的离散数学工具，涵盖求和、递归、生成函数与数论，是算法分析的数学基础"
+  },
+  {
+    "isbn": "9787040396614",
+    "title": "高等数学",
+    "author": "同济大学数学系",
+    "status": "AVAILABLE",
+    "location": "D区-3排-02号",
+    "description": "高校通用的高等数学教材，讲解极限、导数、积分与级数，是工科学习与考研复习的基础参考"
+  },
+  {
+    "isbn": "9787544270878",
+    "title": "人类简史",
+    "author": "尤瓦尔·赫拉利",
+    "status": "AVAILABLE",
+    "location": "E区-1排-01号",
+    "description": "从认知革命、农业革命到科学革命，梳理智人如何成为地球主宰，兼谈文化、宗教与帝国的演进，是广受欢迎的历史通识读物"
+  },
+  {
+    "isbn": "9787508647357",
+    "title": "思考，快与慢",
+    "author": "丹尼尔·卡尼曼",
+    "status": "BORROWED",
+    "location": "E区-1排-02号",
+    "description": "诺贝尔经济学奖得主论述人类思维的两套系统，揭示直觉判断中的偏见与启发式，是行为经济学与心理学的经典普及读物"
+  },
+  {
+    "isbn": "9787020002207",
+    "title": "红楼梦",
+    "author": "曹雪芹",
+    "status": "BORROWED",
+    "location": "E区-1排-03号",
+    "description": "中国古典小说的巅峰之作，以贾府的兴衰为背景描写众多人物的命运，兼具文学价值与社会史料价值"
+  },
+  {
+    "isbn": "9787544253994",
+    "title": "百年孤独",
+    "author": "加西亚·马尔克斯",
+    "status": "AVAILABLE",
+    "location": "E区-1排-04号",
+    "description": "魔幻现实主义的代表作，讲述布恩迪亚家族七代人的传奇与马孔多小镇的百年变迁，是拉美文学的经典"
+  },
+  {
+    "isbn": "9787521702320",
+    "title": "经济学原理",
+    "author": "曼昆",
+    "status": "AVAILABLE",
+    "location": "E区-1排-05号",
+    "description": "经济学入门教材，用十大原理串联微观与宏观经济学的基本概念，案例丰富，适合非经济专业读者建立经济学直觉"
+  },
+  {
+    "isbn": "9787111655653",
+    "title": "数据密集型应用系统设计",
+    "author": "Martin Kleppmann",
+    "status": "AVAILABLE",
+    "location": "C区-3排-05号",
+    "description": "讲解分布式数据系统的可靠性、可扩展性与可维护性，涵盖复制、分区、事务与流处理，是后端架构进阶的必读书"
+  }
+]

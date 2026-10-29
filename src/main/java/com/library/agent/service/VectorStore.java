@@ -16,17 +16,24 @@ public class VectorStore {
 
     private final Map<Long, double[]> store = new ConcurrentHashMap<>();
 
+    /**
+     * 检索命中项：图书 id 与该图书与查询向量的余弦相似度。
+     *
+     * <p>相似度一并返回而非只回 id，是为了让调用方（{@code RecommendationService}）
+     * 能按阈值过滤并记录 top1 分数 —— 阈值是推荐策略，不属于向量索引的职责。</p>
+     */
+    public record ScoredBook(Long id, double score) { }
+
     public void put(Book book, double[] vector) {
         store.put(book.getId(), vector);
         log.debug("向量已存储: bookId={}", book.getId());
     }
 
-    public List<Long> search(double[] queryVector, int topK) {
+    public List<ScoredBook> search(double[] queryVector, int topK) {
         return store.entrySet().stream()
-                .map(e -> Map.entry(e.getKey(), cosineSimilarity(queryVector, e.getValue())))
-                .sorted(Map.Entry.<Long, Double>comparingByValue(Comparator.reverseOrder()))
+                .map(e -> new ScoredBook(e.getKey(), cosineSimilarity(queryVector, e.getValue())))
+                .sorted(Comparator.comparingDouble(ScoredBook::score).reversed())
                 .limit(topK)
-                .map(Map.Entry::getKey)
                 .toList();
     }
 

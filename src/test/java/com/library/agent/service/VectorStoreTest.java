@@ -27,9 +27,21 @@ class VectorStoreTest {
         vectorStore.put(book(2L), new double[]{0, 1});    // 与 query 正交，相似度 0
         vectorStore.put(book(3L), new double[]{0.9, 0.1}); // 接近同向，相似度 ≈0.994
 
-        List<Long> top2 = vectorStore.search(new double[]{1, 0}, 2);
+        List<Long> top2 = ids(vectorStore.search(new double[]{1, 0}, 2));
 
         assertEquals(List.of(1L, 3L), top2);
+    }
+
+    @Test
+    @DisplayName("检索结果一并返回相似度分数，供上层按阈值过滤")
+    void search_shouldExposeSimilarityScore() {
+        vectorStore.put(book(1L), new double[]{1, 0});
+        vectorStore.put(book(2L), new double[]{0, 1});
+
+        List<VectorStore.ScoredBook> hits = vectorStore.search(new double[]{1, 0}, 2);
+
+        assertEquals(1.0, hits.get(0).score(), 1e-9);
+        assertEquals(0.0, hits.get(1).score(), 1e-9);
     }
 
     @Test
@@ -38,7 +50,7 @@ class VectorStoreTest {
         vectorStore.put(book(1L), new double[]{1, 0});     // 余弦 1.0，点积 1
         vectorStore.put(book(2L), new double[]{100, 1});   // 余弦 ≈0.99995，点积 100
 
-        List<Long> top1 = vectorStore.search(new double[]{1, 0}, 1);
+        List<Long> top1 = ids(vectorStore.search(new double[]{1, 0}, 1));
 
         // 若退化成点积，book2 会因模长大而排到第一
         assertEquals(List.of(1L), top1);
@@ -58,7 +70,7 @@ class VectorStoreTest {
     void search_shouldTreatZeroVectorAsZeroSimilarity() {
         vectorStore.put(book(1L), new double[]{0, 0});
 
-        assertEquals(List.of(1L), vectorStore.search(new double[]{1, 0}, 1));
+        assertEquals(List.of(1L), ids(vectorStore.search(new double[]{1, 0}, 1)));
     }
 
     @Test
@@ -74,10 +86,10 @@ class VectorStoreTest {
         vectorStore.put(book1, new double[]{1, 0});      // 与 query {1,0} 相似度 1.0
         vectorStore.put(book(2L), new double[]{0.5, 0.5}); // 相似度 ≈0.707
 
-        List<Long> beforeOverwrite = vectorStore.search(new double[]{1, 0}, 1);
+        List<Long> beforeOverwrite = ids(vectorStore.search(new double[]{1, 0}, 1));
         vectorStore.put(book1, new double[]{0, 1});      // 覆盖为与 query 正交
 
-        List<Long> afterOverwrite = vectorStore.search(new double[]{1, 0}, 1);
+        List<Long> afterOverwrite = ids(vectorStore.search(new double[]{1, 0}, 1));
 
         assertEquals(2, vectorStore.size(), "覆盖写入不应新增条目");
         assertEquals(List.of(1L), beforeOverwrite);
@@ -93,6 +105,10 @@ class VectorStoreTest {
         vectorStore.clear();
 
         assertEquals(0, vectorStore.size());
+    }
+
+    private List<Long> ids(List<VectorStore.ScoredBook> hits) {
+        return hits.stream().map(VectorStore.ScoredBook::id).toList();
     }
 
     private Book book(Long id) {

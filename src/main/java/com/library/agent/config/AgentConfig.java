@@ -4,9 +4,7 @@ import com.library.agent.repository.BookRepository;
 import com.library.agent.repository.BorrowRecordRepository;
 import com.library.agent.service.RecommendationService;
 import com.library.agent.tools.LibraryTool;
-import io.agentscope.core.ReActAgent;
 import io.agentscope.core.formatter.dashscope.DashScopeChatFormatter;
-import io.agentscope.core.memory.InMemoryMemory;
 import io.agentscope.core.model.DashScopeChatModel;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.tool.Toolkit;
@@ -31,11 +29,9 @@ public class AgentConfig {
     @Value("${agentscope.dashscope.model-name:qwen-plus}")
     private String modelName;
 
-    @Value("${agentscope.agent.name:图书馆助手}")
-    private String agentName;
-
-    @Value("${agentscope.agent.sys-prompt:你是学校图书馆的智能助手，帮助读者查书、借书、还书。}")
-    private String sysPrompt;
+    /** 留空走官方地址；压测时指向本地 mock，避免消耗真实额度。 */
+    @Value("${agentscope.dashscope.base-url:}")
+    private String baseUrl;
 
     @Bean
     public DashScopeChatModel dashScopeChatModel() {
@@ -48,14 +44,18 @@ public class AgentConfig {
                     + "或设置环境变量 DASHSCOPE_API_KEY=sk-xxx（获取地址 https://bailian.console.aliyun.com/）");
             throw new IllegalStateException("DASHSCOPE_API_KEY 未配置，服务无法启动");
         }
-        return DashScopeChatModel.builder()
+        var builder = DashScopeChatModel.builder()
                 .apiKey(apiKey)
                 .modelName(modelName)
                 .stream(true)
                 .enableThinking(true)
                 .formatter(new DashScopeChatFormatter())
-                .defaultOptions(GenerateOptions.builder().thinkingBudget(1024).build())
-                .build();
+                .defaultOptions(GenerateOptions.builder().thinkingBudget(1024).build());
+        if (baseUrl != null && !baseUrl.isBlank()) {
+            builder.baseUrl(baseUrl);
+            log.warn("Chat 模型指向自定义地址: {}（仅用于本地压测，生产环境不应设置）", baseUrl);
+        }
+        return builder.build();
     }
 
     @Bean
@@ -68,16 +68,5 @@ public class AgentConfig {
         Toolkit toolkit = new Toolkit();
         toolkit.registerTool(libraryTool);
         return toolkit;
-    }
-
-    @Bean
-    public ReActAgent reActAgent(DashScopeChatModel model, Toolkit toolkit) {
-        return ReActAgent.builder()
-                .name(agentName)
-                .sysPrompt(sysPrompt)
-                .model(model)
-                .memory(new InMemoryMemory())
-                .toolkit(toolkit)
-                .build();
     }
 }

@@ -1,0 +1,52 @@
+{
+  "generated_by": "tools/corpus/build_corpus.py",
+  "seed": 20261029,
+  "real_book_count": 749,
+  "sources": [
+    {
+      "name": "DOUBAN-BOOKS-TOP250",
+      "platform": "ModelScope",
+      "namespace": "YU0606777",
+      "license_note": "公开数据集，仅使用书名/作者/出版社/年份等事实字段"
+    },
+    {
+      "name": "dangdang_24h_book_dataset",
+      "platform": "ModelScope",
+      "namespace": "G13565855469",
+      "license_note": "同上"
+    }
+  ],
+  "real_fields": [
+    "title",
+    "author",
+    "publisher",
+    "year"
+  ],
+  "generated_fields": [
+    "isbn",
+    "status",
+    "location",
+    "description"
+  ],
+  "expansion_rule": "第 i 条取真实书目 i % N，书名追加版次/卷次后缀，简介按领域模板生成；每条均可追溯到一本真实书目",
+  "scales": {
+    "5000": {
+      "file": "books-5000.json",
+      "count": 5000,
+      "real_prefix_count": 749,
+      "synthetic_count": 4251
+    },
+    "10000": {
+      "file": "books-10000.json",
+      "count": 10000,
+      "real_prefix_count": 749,
+      "synthetic_count": 9251
+    },
+    "50000": {
+      "file": "books-50000.json",
+      "count": 50000,
+      "real_prefix_count": 749,
+      "synthetic_count": 49251
+    }
+  }
+}
