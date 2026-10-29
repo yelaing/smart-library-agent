@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import com.library.agent.service.AgentSessionManager;
-import io.agentscope.core.ReActAgent;
 import io.agentscope.core.tool.Toolkit;
 import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
@@ -48,15 +47,18 @@ class AgentConfigTest {
     }
 
     @Test
-    @DisplayName("同一会话复用同一 agent，不同会话实例隔离")
+    @DisplayName("同一会话复用同一 agent 与同一道闸门，不同会话实例隔离")
     void forSession_shouldIsolateDifferentSessions() {
-        ReActAgent first = sessionManager.forSession("session-a");
-        ReActAgent again = sessionManager.forSession("session-a");
-        ReActAgent other = sessionManager.forSession("session-b");
+        AgentSessionManager.SessionContext first = sessionManager.forSession("session-a");
+        AgentSessionManager.SessionContext again = sessionManager.forSession("session-a");
+        AgentSessionManager.SessionContext other = sessionManager.forSession("session-b");
 
         assertSame(first, again, "同一会话应复用实例，否则多轮对话的记忆会丢失");
         assertNotSame(first, other, "不同会话必须是不同实例，否则两个读者的对话记忆会互相污染");
-        assertEquals("图书馆助手", first.getName());
+        assertSame(first.gate(), again.gate(), "同一会话必须共用一把闸门，否则串行化不生效");
+        assertNotSame(first.gate(), other.gate(), "不同会话不能共用闸门，否则会互相阻塞");
+        assertEquals(1, first.gate().availablePermits(), "闸门只能有 1 个许可，否则同一会话仍可并发写记忆");
+        assertEquals("图书馆助手", first.agent().getName());
     }
 
     @Test

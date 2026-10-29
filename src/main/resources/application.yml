@@ -15,7 +15,8 @@ spring:
     type: caffeine
     cache-names: bookRecommendation
     caffeine:
-      spec: maximumSize=500,expireAfterWrite=10m
+      # recordStats 是 Micrometer 读取命中率的前提；关闭后只剩 cache.size 一个指标
+      spec: maximumSize=500,expireAfterWrite=10m,recordStats
 
 management:
   endpoints:

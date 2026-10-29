@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.DefaultResourceLoader;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("种子书目初始化测试")
@@ -23,12 +24,14 @@ class DataInitializerTest {
     @Mock
     private BookRepository bookRepository;
 
+    private final DefaultResourceLoader resourceLoader = new DefaultResourceLoader();
+
     @Test
     @DisplayName("库中已有数据时跳过导入，避免每次重启重复写入")
     void shouldSkip_whenRepositoryNotEmpty() {
         when(bookRepository.count()).thenReturn(5L);
 
-        new DataInitializer(bookRepository).run();
+        newInitializer().run();
 
         verify(bookRepository, never()).saveAll(any());
     }
@@ -38,12 +41,16 @@ class DataInitializerTest {
     void shouldLoadSeedBooks_whenRepositoryEmpty() {
         when(bookRepository.count()).thenReturn(0L);
 
-        new DataInitializer(bookRepository).run();
+        newInitializer().run();
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<Book>> captor = ArgumentCaptor.forClass(List.class);
         verify(bookRepository).saveAll(captor.capture());
         assertTrue(captor.getValue().size() >= 50,
                 "books.json 应至少包含 50 本馆藏，实际 " + captor.getValue().size());
+    }
+
+    private DataInitializer newInitializer() {
+        return new DataInitializer(bookRepository, resourceLoader, "classpath:books.json");
     }
 }

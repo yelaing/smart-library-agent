@@ -19,6 +19,9 @@ public class EmbeddingService {
     private static final String SILICONFLOW_URL = "https://api.siliconflow.cn/v1/embeddings";
     private static final String DASHSCOPE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings";
 
+    /** 两家服务商的单次批量上限都是 10 条，2026-10 实测：11 条起返回 400。 */
+    public static final int MAX_BATCH_SIZE = 10;
+
     private final String endpoint;
     private final String model;
     private final String apiKey;
@@ -27,6 +30,7 @@ public class EmbeddingService {
     public EmbeddingService(
             @Value("${siliconflow.api-key:#{null}}") String siliconflowKey,
             @Value("${agentscope.dashscope.api-key}") String dashscopeKey,
+            @Value("${library.embedding.base-url:}") String baseUrl,
             RestTemplate embeddingRestTemplate) {
         this.restTemplate = embeddingRestTemplate;
         if (siliconflowKey != null && !siliconflowKey.isBlank()) {
@@ -36,21 +40,41 @@ public class EmbeddingService {
             log.info("使用硅基流动 Embedding 服务");
         } else {
             this.apiKey = dashscopeKey;
-            this.endpoint = DASHSCOPE_URL;
+            this.endpoint = baseUrl != null && !baseUrl.isBlank() ? baseUrl : DASHSCOPE_URL;
             this.model = "text-embedding-v4";
-            log.info("使用百炼 DashScope Embedding 服务");
+            if (this.endpoint.equals(DASHSCOPE_URL)) {
+                log.info("使用百炼 DashScope Embedding 服务");
+            } else {
+                log.warn("Embedding 指向自定义地址: {}（仅用于本地压测，生产环境不应设置）", this.endpoint);
+            }
         }
     }
 
     @SuppressWarnings("unchecked")
     public double[] embed(String text) {
+        return embedBatch(List.of(text)).get(0);
+    }
+
+    /**
+     * 批量向量化。DashScope / 硅基流动的单次请求上限都是 10 条，
+     * 超过会被服务端以 400 拒绝，因此在本地先拦住并给出可读错误。
+     */
+    @SuppressWarnings("unchecked")
+    public List<double[]> embedBatch(List<String> texts) {
+        if (texts.isEmpty()) {
+            return List.of();
+        }
+        if (texts.size() > MAX_BATCH_SIZE) {
+            throw new IllegalArgumentException("单次向量化条数不能超过 " + MAX_BATCH_SIZE + "，实际 " + texts.size());
+        }
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
 
         Map<String, Object> body = Map.of(
                 "model", model,
-                "input", text
+                "input", texts
         );
 
         long start = System.currentTimeMillis();
@@ -60,13 +84,23 @@ public class EmbeddingService {
                 throw new RuntimeException("Embedding API 返回为空");
             }
             List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
-            List<Double> raw = (List<Double>) data.get(0).get("embedding");
-            double[] vector = raw.stream().mapToDouble(Double::doubleValue).toArray();
-            log.debug("文本向量化完成: model={}, 维度={}, cost={}ms", model, vector.length,
-                    System.currentTimeMillis() - start);
-            return vector;
+            if (data == null || data.size() != texts.size()) {
+                throw new RuntimeException("Embedding API 返回条数与请求不符: 期望 " + texts.size()
+                        + "，实际 " + (data == null ? 0 : data.size()));
+            }
+            // 服务端不保证返回顺序，按 index 归位
+            double[][] ordered = new double[texts.size()][];
+            for (int i = 0; i < data.size(); i++) {
+                Map<String, Object> item = data.get(i);
+                int index = item.get("index") instanceof Number n ? n.intValue() : i;
+                List<Double> raw = (List<Double>) item.get("embedding");
+                ordered[index] = raw.stream().mapToDouble(Double::doubleValue).toArray();
+            }
+            log.debug("批量向量化完成: model={}, 条数={}, 维度={}, cost={}ms", model, texts.size(),
+                    ordered[0].length, System.currentTimeMillis() - start);
+            return List.of(ordered);
         } catch (Exception e) {
-            log.error("文本向量化失败: endpoint={}, cost={}ms, reason={}", endpoint,
+            log.error("批量向量化失败: endpoint={}, 条数={}, cost={}ms, reason={}", endpoint, texts.size(),
                     System.currentTimeMillis() - start, e.getMessage());
             throw new RuntimeException("文本向量化失败: " + e.getMessage(), e);
         }

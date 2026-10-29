@@ -41,10 +41,12 @@ class ChatControllerTest {
     private AgentSessionManager sessions;
 
     private final ReActAgent agent = mock(ReActAgent.class);
+    private final AgentSessionManager.SessionContext session =
+            new AgentSessionManager.SessionContext(agent, new java.util.concurrent.Semaphore(1));
 
     @BeforeEach
     void setUp() {
-        lenient().when(sessions.forSession(any())).thenReturn(agent);
+        lenient().when(sessions.forSession(any())).thenReturn(session);
     }
 
     @Test
