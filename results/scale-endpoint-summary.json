@@ -1,0 +1,38 @@
+{
+  "note": "推荐接口端到端：缓存关闭，10 并发，mock 对话 50ms / Embedding 180ms",
+  "tiers": [
+    {
+      "books": 5000,
+      "users": 10,
+      "requests": 1767,
+      "failures": 0,
+      "qps": 29.73,
+      "p50_ms": 310.0,
+      "p95_ms": 320.0,
+      "p99_ms": 330.0,
+      "max_ms": 350.0
+    },
+    {
+      "books": 10000,
+      "users": 10,
+      "requests": 1761,
+      "failures": 0,
+      "qps": 29.53,
+      "p50_ms": 310.0,
+      "p95_ms": 320.0,
+      "p99_ms": 330.0,
+      "max_ms": 1100.0
+    },
+    {
+      "books": 50000,
+      "users": 10,
+      "requests": 1358,
+      "failures": 0,
+      "qps": 22.7,
+      "p50_ms": 400.0,
+      "p95_ms": 440.0,
+      "p99_ms": 510.0,
+      "max_ms": 2500.0
+    }
+  ]
+}

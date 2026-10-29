@@ -1,0 +1,60 @@
+{
+  "host": "http://127.0.0.1:18082",
+  "duration": "60s",
+  "session_mode": "unique",
+  "note": "由 locust 原始 CSV 重建；u200 为独立重跑（u200b），矩阵内首跑见 matrix_first_run_u200。缓存命中率来自 run_matrix 的窗口计数：u10 99.78%，u50/u200 100%；重建文件未保存计数器原始值，故 cache_window 留空。",
+  "tiers": [
+    {
+      "users": 10,
+      "requests": 4868,
+      "failures": 0,
+      "qps": 82.09,
+      "p50_ms": 110.0,
+      "p95_ms": 120.0,
+      "p99_ms": 120.0,
+      "max_ms": 750.0,
+      "avg_ms": 112.3,
+      "cache_window": {
+        "hit_rate": null
+      }
+    },
+    {
+      "users": 50,
+      "requests": 18129,
+      "failures": 0,
+      "qps": 306.4,
+      "p50_ms": 140.0,
+      "p95_ms": 240.0,
+      "p99_ms": 260.0,
+      "max_ms": 350.0,
+      "avg_ms": 150.2,
+      "cache_window": {
+        "hit_rate": null
+      }
+    },
+    {
+      "users": 200,
+      "requests": 30974,
+      "failures": 0,
+      "qps": 523.42,
+      "p50_ms": 340.0,
+      "p95_ms": 650.0,
+      "p99_ms": 790.0,
+      "max_ms": 1300.0,
+      "avg_ms": 350.4,
+      "cache_window": {
+        "hit_rate": null
+      }
+    }
+  ],
+  "matrix_first_run_u200": {
+    "requests": 31277,
+    "failures": 70,
+    "qps": 528.35,
+    "p50_ms": 330.0,
+    "p95_ms": 630.0,
+    "p99_ms": 790.0,
+    "max_ms": 8800.0,
+    "avg_ms": 347.4
+  }
+}
